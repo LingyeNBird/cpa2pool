@@ -278,7 +278,12 @@ h3 {
 }
 .table-list-inset {
   padding: 4px 0 0 4px;
-  box-shadow: inset 4px 4px 0 var(--surface-depth);
+  background: var(--surface-depth);
+}
+.table-list-inset > .table {
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--color-base-100);
 }
 .table-detail {
   border-radius: 9px;
