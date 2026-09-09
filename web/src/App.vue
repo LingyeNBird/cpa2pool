@@ -35,6 +35,7 @@ async function signIn() {
         <PhChartLine :size="27" weight="bold" />
         <h1>拼车额度</h1>
       </div>
+      <PageActions v-if="authenticated" :busy="busy" @refresh="revision++" @logout="logout" />
     </header>
     <div v-if="failure" class="alert alert-error error-bar" role="alert">
       <span>{{ failure }}</span
@@ -72,7 +73,6 @@ async function signIn() {
           <component :is="tab.icon" :size="19" />{{ tab.title }}
         </button>
       </nav>
-      <PageActions :busy="busy" @refresh="revision++" @logout="logout" />
       <ParticipantsPage v-if="section === 'participants'" :key="`p${revision}`" />
       <PricesPage v-else-if="section === 'prices'" :key="`c${revision}`" />
       <ReportsPage v-else :key="`r${revision}`" />
