@@ -78,7 +78,6 @@
   border-color: var(--color-base-content);
   background: var(--color-secondary);
 }
-.sage-calendar:has(.calendar-time-editor) .dp--action-row,
 .sage-calendar:has(.calendar-time-editor) .dp--time-picker-overlay-container > .dp--button {
   display: none;
 }

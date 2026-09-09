@@ -44,7 +44,7 @@ function keydown(event: KeyboardEvent) {
       <span>{{ date ? date.toLocaleDateString('zh-CN') : '今天' }}</span>
     </header>
     <div class="time-unit">
-      <NumberField v-model="hours" label="小时" min="0" max="23" step="1" required />
+      <NumberField v-model="hours" label="小时" min="0" max="23" step="1" required wrap />
       <input
         v-model.number="hours"
         class="time-slider"
@@ -56,7 +56,7 @@ function keydown(event: KeyboardEvent) {
       />
     </div>
     <div class="time-unit">
-      <NumberField v-model="minutes" label="分钟" min="0" max="59" step="1" required />
+      <NumberField v-model="minutes" label="分钟" min="0" max="59" step="1" required wrap />
       <input
         v-model.number="minutes"
         class="time-slider"

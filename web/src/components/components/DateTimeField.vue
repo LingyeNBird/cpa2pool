@@ -21,6 +21,7 @@ const root = ref<HTMLElement>();
 const picker = ref<InstanceType<typeof VueDatePicker>>();
 const portal = shallowRef<HTMLElement>();
 const open = ref(false);
+const timeEditorOpen = ref(false);
 const selectedTime = ref('');
 const selectedDate = shallowRef<Date | null>(null);
 const timePreview = ref<HTMLElement>();
@@ -73,6 +74,9 @@ function closeTimeEditor() {
   picker.value?.switchView('calendar');
   nextTick(() => timePreview.value?.closest('button')?.focus());
 }
+function updateOverlayState({ open: overlayOpen, overlay }: { open: boolean; overlay: string }) {
+  if (overlay === 'time') timeEditorOpen.value = overlayOpen;
+}
 </script>
 <template>
   <div ref="root" class="field date-time-field" @keydown.esc.capture="preventDialogCancel">
@@ -118,7 +122,10 @@ function closeTimeEditor() {
         timePicker: '时间选择器',
         toggleOverlay: '切换选择器',
       }"
-      :ui="{ input: 'input', menu: 'sage-calendar' }"
+      :ui="{
+        input: 'input',
+        menu: timeEditorOpen ? 'sage-calendar calendar-editing-time' : 'sage-calendar',
+      }"
       :teleport="portal || false"
       :transitions="{
         menuAppearTop: 'calendar-above',
@@ -130,10 +137,14 @@ function closeTimeEditor() {
       arrow-navigation
       placeholder="YYYY-MM-DD HH:mm"
       @open="open = true"
-      @closed="open = false"
+      @closed="
+        open = false;
+        timeEditorOpen = false;
+      "
       @text-input="validateInput"
       @update:model-value="update"
       @internal-model-change="updateTimePreview"
+      @overlay-toggle="updateOverlayState"
     >
       <template #input-icon>
         <button

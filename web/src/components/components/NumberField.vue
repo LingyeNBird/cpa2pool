@@ -14,17 +14,21 @@ const props = withDefaults(
     step?: string | number;
     disabled?: boolean;
     required?: boolean;
+    wrap?: boolean;
   }>(),
   { step: 'any' },
 );
 const id = useId();
 const numericModel = typeof model.value === 'number';
 const current = computed(() => new Big(model.value || 0));
+const canWrap = computed(() => props.wrap && props.min !== undefined && props.max !== undefined);
 const decreaseDisabled = computed(
-  () => props.disabled || (props.min !== undefined && current.value.lte(props.min)),
+  () =>
+    props.disabled || (!canWrap.value && props.min !== undefined && current.value.lte(props.min)),
 );
 const increaseDisabled = computed(
-  () => props.disabled || (props.max !== undefined && current.value.gte(props.max)),
+  () =>
+    props.disabled || (!canWrap.value && props.max !== undefined && current.value.gte(props.max)),
 );
 function update(value: string) {
   model.value = (numericModel && value !== '' ? Number(value) : value) as T;
@@ -33,8 +37,12 @@ function adjust(direction: number) {
   if (direction < 0 ? decreaseDisabled.value : increaseDisabled.value) return;
   const increment = props.step === 'any' ? 1 : props.step;
   let value = current.value.plus(new Big(increment).times(direction));
-  if (props.min !== undefined && value.lt(props.min)) value = new Big(props.min);
-  if (props.max !== undefined && value.gt(props.max)) value = new Big(props.max);
+  if (props.min !== undefined && value.lt(props.min)) {
+    value = new Big(canWrap.value ? props.max! : props.min);
+  }
+  if (props.max !== undefined && value.gt(props.max)) {
+    value = new Big(canWrap.value ? props.min! : props.max);
+  }
   update(value.toFixed());
 }
 </script>
