@@ -1,4 +1,22 @@
-.participant-count { margin-left: 8px; color: #738669; font-size: 0.9rem; }
-.participant-search { max-width: 320px; margin-bottom: 18px; }
-.participant-name { font-weight: 700; background: none; border: none; padding: 0; cursor: pointer; text-align: left; }
-.participant-key { margin-top: 5px; font-size: 0.75rem; color: #617058; }
+.participant-count {
+  margin-left: 8px;
+  color: #738669;
+  font-size: 0.9rem;
+}
+.participant-search {
+  max-width: 320px;
+  margin-bottom: 18px;
+}
+.participant-name {
+  font-weight: 700;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.participant-key {
+  margin-top: 5px;
+  font-size: 0.75rem;
+  color: #617058;
+}

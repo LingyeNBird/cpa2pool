@@ -1,0 +1,17 @@
+# 合并到 CPA 的现有配置，不要覆盖现有上游与 API Key 配置。
+# 将 dist/cpa2pool.so 安装为 plugins/cpa2pool.so，文件名决定插件 ID。
+# 最新宿主接口与管理中心提交见 upstream.json；原生 ABI 1 / schema 6。
+plugins:
+  enabled: true
+  dir: plugins
+  configs:
+    cpa2pool:
+      enabled: true
+      priority: 100
+      database: data/cpa2pool.db
+
+# 所有 CPA 调用者须在插件中建立参与者并配置有效额度。
+# 首次使用先添加实际模型价格，再关联现有 CPA API Key 并添加额度。
+# 管理页面：/v0/resource/plugins/cpa2pool/ui
+# 管理接口：/v0/management/cpa2pool，Bearer 使用 CPA 管理密钥。
+# 容器安装时持久化 database 所在目录。

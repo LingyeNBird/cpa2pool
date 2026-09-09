@@ -1,0 +1,1584 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "cpa2pool 管理接口",
+    "version": "0.1.0",
+    "description": "插件是费用与余额的唯一计算来源。外部项目读取账单并调整额度，不再次计费或叠加倍率。金额单位为 USD，字符串小数，最多九位小数；模型单价为 USD/百万 Token。请求按进入插件时的价格快照、响应实际模型和实际服务档位计费。所有当前有效额度同时扣减；任一耗尽拒绝新请求。计费为请求完成后结算，已放行的在途请求可使余额为负。周期按 UTC 计时，月周期保留锚定日期并在短月取月底。"
+  },
+  "servers": [
+    {
+      "url": "/v0/management/cpa2pool"
+    }
+  ],
+  "security": [
+    {
+      "managementKey": []
+    }
+  ],
+  "paths": {
+    "/participants": {
+      "get": {
+        "summary": "查询参与者",
+        "operationId": "get_participants",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Participant"
+                          }
+                        },
+                        {
+                          "$ref": "#/components/schemas/Participant"
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "不传 id 返回未删除的参与者列表；提供 id 可查询保留的已删除参与者。"
+      },
+      "post": {
+        "summary": "保存参与者",
+        "operationId": "post_participants",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Participant"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParticipantInput"
+              }
+            }
+          }
+        },
+        "description": "完整保存，不是字段补丁。编辑请先查询并保留原字段。API Key 修改不改变参与者 ID，也不清空消费。"
+      },
+      "put": {
+        "summary": "保存参与者",
+        "operationId": "put_participants",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Participant"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParticipantInput"
+              }
+            }
+          }
+        },
+        "description": "完整保存，不是字段补丁。编辑请先查询并保留原字段。API Key 修改不改变参与者 ID，也不清空消费。"
+      },
+      "delete": {
+        "summary": "删除参与者",
+        "operationId": "delete_participants",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "null"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "逻辑删除并拒绝其后续请求，保留账单和审计。"
+      }
+    },
+    "/prices": {
+      "post": {
+        "summary": "保存模型单价和倍率",
+        "operationId": "post_prices",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Price"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceInput"
+              }
+            }
+          }
+        },
+        "description": "整条替换。单价为 USD/百万 Token。长上下文在总输入（含缓存）严格大于阈值时生效。multiply 相乘；max 分别取输入与输出倍率最大值。历史账单与周期不改变。"
+      },
+      "put": {
+        "summary": "保存模型单价和倍率",
+        "operationId": "put_prices",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Price"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceInput"
+              }
+            }
+          }
+        },
+        "description": "整条替换。单价为 USD/百万 Token。长上下文在总输入（含缓存）严格大于阈值时生效。multiply 相乘；max 分别取输入与输出倍率最大值。历史账单与周期不改变。"
+      },
+      "get": {
+        "summary": "查询模型价格",
+        "operationId": "get_prices",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Price"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除模型价格",
+        "operationId": "delete_prices",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "null"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "model",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "保留历史快照，未配置价格的实际模型不允许新的上游执行。"
+      }
+    },
+    "/quotas": {
+      "post": {
+        "summary": "保存额度",
+        "operationId": "post_quotas",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Quota"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuotaInput"
+              }
+            }
+          }
+        },
+        "description": "完整保存。创建可指定未来/过去 starts_at；编辑时不允许改变参与者、开始时间或周期类型。可编辑名称、启用、有效期和限额。无有效额度的参与者不可使用。"
+      },
+      "put": {
+        "summary": "保存额度",
+        "operationId": "put_quotas",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Quota"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuotaInput"
+              }
+            }
+          }
+        },
+        "description": "完整保存。创建可指定未来/过去 starts_at；编辑时不允许改变参与者、开始时间或周期类型。可编辑名称、启用、有效期和限额。无有效额度的参与者不可使用。"
+      },
+      "get": {
+        "summary": "查询参与者额度配置",
+        "operationId": "get_quotas",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Quota"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/adjustments": {
+      "post": {
+        "summary": "调整余额有效期或重置周期",
+        "operationId": "post_adjustments",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Quota"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Adjustment"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "get": {
+        "summary": "查询真实额度和限制原因",
+        "operationId": "get_status",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/Status"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "used 为全部请求累计消费；剩余取所有有效限额中的最小值。触发到期周期滚动。reasons 包括 disabled、paused、deleted、expired、no_active_quota、quota_exhausted:<额度ID>。"
+      }
+    },
+    "/bills": {
+      "get": {
+        "summary": "查询请求账单",
+        "operationId": "get_bills",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/BillPage"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "RFC3339 起始时间，含边界。"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "RFC3339 结束时间，不含边界。"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ]
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "查询消费统计",
+        "operationId": "get_stats",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Stat"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "model",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "RFC3339 起始时间，含边界。"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "RFC3339 结束时间，不含边界。"
+          },
+          {
+            "name": "group",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["all", "model", "participant", "day"],
+              "default": "all"
+            }
+          }
+        ],
+        "description": "统计仅包含请求消费，不把管理员手动额度调整作为消费。"
+      }
+    },
+    "/periods": {
+      "get": {
+        "summary": "查询当前及历史额度周期",
+        "operationId": "get_periods",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Period"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "quota_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "description": "按周期开始时间倒序。传 participant_id 会刷新到期周期。reset 且 restart=false 时新计费段保留原周期起止，旧段保留已用金额。"
+      }
+    },
+    "/audits": {
+      "get": {
+        "summary": "查询额度和配置调整记录",
+        "operationId": "get_audits",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/AuditPage"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          },
+          "404": {
+            "description": "记录不存在"
+          }
+        },
+        "parameters": [
+          {
+            "name": "participant_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "RFC3339 起始时间，含边界。"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "RFC3339 结束时间，不含边界。"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "managementKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "CPA 管理密钥；与原生管理中心相同。"
+      }
+    },
+    "schemas": {
+      "Money": {
+        "type": "string",
+        "pattern": "^-?\\d+(\\.\\d{1,9})?$",
+        "description": "USD 十进制金额，不使用浮点数重新计算。"
+      },
+      "Participant": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "key_scope": {
+            "type": "string"
+          },
+          "key_preview": {
+            "type": "string"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "deleted": {
+            "type": "boolean"
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "efforts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "note",
+          "key_scope",
+          "key_preview",
+          "enabled",
+          "paused",
+          "deleted",
+          "models",
+          "efforts",
+          "expires_at",
+          "created_at"
+        ]
+      },
+      "ParticipantInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "创建时省略；修改时提供稳定标识。"
+          },
+          "name": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "api_key": {
+            "type": "string",
+            "writeOnly": true,
+            "description": "已配置到 CPA 的 API Key；创建时必填，修改时省略或留空保留关联。不在插件数据库保存原文。"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "paused": {
+            "type": "boolean"
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "客户端请求的模型名称精确匹配；空数组不限制。"
+          },
+          "efforts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "推理强度精确匹配。default=未指定；空数组不限制。"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        },
+        "required": ["name", "enabled"]
+      },
+      "Price": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "output": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "cache_read": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "cache_write": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "priority_enabled": {
+            "type": "boolean"
+          },
+          "priority_multiplier": {
+            "type": "string"
+          },
+          "long_enabled": {
+            "type": "boolean"
+          },
+          "long_threshold": {
+            "type": "integer"
+          },
+          "long_input_multiplier": {
+            "type": "string"
+          },
+          "long_output_multiplier": {
+            "type": "string"
+          },
+          "model_enabled": {
+            "type": "boolean"
+          },
+          "model_multiplier": {
+            "type": "string"
+          },
+          "combination": {
+            "type": "string",
+            "enum": ["multiply", "max"]
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "model",
+          "input",
+          "output",
+          "cache_read",
+          "cache_write",
+          "priority_enabled",
+          "priority_multiplier",
+          "long_enabled",
+          "long_threshold",
+          "long_input_multiplier",
+          "long_output_multiplier",
+          "model_enabled",
+          "model_multiplier",
+          "combination",
+          "updated_at"
+        ]
+      },
+      "PriceInput": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "output": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "cache_read": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "cache_write": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "priority_enabled": {
+            "type": "boolean"
+          },
+          "priority_multiplier": {
+            "type": "string"
+          },
+          "long_enabled": {
+            "type": "boolean"
+          },
+          "long_threshold": {
+            "type": "integer"
+          },
+          "long_input_multiplier": {
+            "type": "string"
+          },
+          "long_output_multiplier": {
+            "type": "string"
+          },
+          "model_enabled": {
+            "type": "boolean"
+          },
+          "model_multiplier": {
+            "type": "string"
+          },
+          "combination": {
+            "type": "string",
+            "enum": ["multiply", "max"]
+          }
+        },
+        "required": [
+          "model",
+          "input",
+          "output",
+          "cache_read",
+          "cache_write",
+          "priority_enabled",
+          "priority_multiplier",
+          "long_enabled",
+          "long_threshold",
+          "long_input_multiplier",
+          "long_output_multiplier",
+          "model_enabled",
+          "model_multiplier",
+          "combination"
+        ]
+      },
+      "Quota": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "participant_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "limit": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "period": {
+            "type": "string",
+            "enum": ["none", "day", "week", "month"]
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "anchor": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "participant_id",
+          "name",
+          "limit",
+          "period",
+          "starts_at",
+          "expires_at",
+          "enabled",
+          "anchor"
+        ]
+      },
+      "QuotaInput": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "participant_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "limit": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "period": {
+            "type": "string",
+            "enum": ["none", "day", "week", "month"]
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": ["participant_id", "name", "limit", "period", "enabled"]
+      },
+      "Period": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "quota_id": {
+            "type": "string"
+          },
+          "participant_id": {
+            "type": "string"
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ends_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "closed_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "limit": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "used": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "remaining": {
+            "$ref": "#/components/schemas/Money"
+          }
+        },
+        "required": [
+          "id",
+          "quota_id",
+          "participant_id",
+          "starts_at",
+          "ends_at",
+          "closed_at",
+          "limit",
+          "used",
+          "remaining"
+        ]
+      },
+      "QuotaView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "participant_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "limit": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "period": {
+            "type": "string",
+            "enum": ["none", "day", "week", "month"]
+          },
+          "starts_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "anchor": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "current": {
+            "$ref": "#/components/schemas/Period"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "participant_id",
+          "name",
+          "limit",
+          "period",
+          "starts_at",
+          "expires_at",
+          "enabled",
+          "anchor",
+          "current",
+          "reason"
+        ]
+      },
+      "Status": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "boolean"
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remaining": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Money"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "used": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "quotas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/QuotaView"
+            }
+          }
+        },
+        "required": ["available", "reasons", "remaining", "used", "quotas"]
+      },
+      "Adjustment": {
+        "type": "object",
+        "properties": {
+          "quota_id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["set_limit", "add", "set_remaining", "expiry", "reset", "new_period"],
+            "description": "set_limit=改限额；add=正数增加/负数减少；set_remaining=限额改为已用+新剩余；expiry=改有效期；reset=归档当前计费段并清零已用，默认保留起止；new_period=归档并从现在重新计时。额度金额变动也改变后续周期限额。"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "restart": {
+            "type": "boolean",
+            "default": false,
+            "description": "reset 时是否同时重新开始周期计时。"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": ["quota_id", "action"]
+      },
+      "Usage": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "integer"
+          },
+          "output": {
+            "type": "integer"
+          },
+          "cache_read": {
+            "type": "integer"
+          },
+          "cache_write": {
+            "type": "integer"
+          },
+          "reasoning": {
+            "type": "integer"
+          }
+        },
+        "required": ["input", "output", "cache_read", "cache_write", "reasoning"]
+      },
+      "Factor": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "input": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          }
+        },
+        "required": ["name", "input", "output"]
+      },
+      "Charge": {
+        "type": "object",
+        "properties": {
+          "base": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "final": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "factors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Factor"
+            }
+          },
+          "price": {
+            "$ref": "#/components/schemas/Price"
+          }
+        },
+        "required": ["base", "final", "factors", "price"]
+      },
+      "Bill": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "participant_id": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "requested_model": {
+            "type": "string"
+          },
+          "effort": {
+            "type": "string"
+          },
+          "service_tier": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          },
+          "charge": {
+            "$ref": "#/components/schemas/Charge"
+          }
+        },
+        "required": [
+          "id",
+          "request_id",
+          "participant_id",
+          "model",
+          "requested_model",
+          "effort",
+          "service_tier",
+          "time",
+          "usage",
+          "charge"
+        ]
+      },
+      "Audit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "participant_id": {
+            "type": "string"
+          },
+          "quota_id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "before": {},
+          "after": {},
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "participant_id",
+          "quota_id",
+          "action",
+          "time",
+          "before",
+          "after",
+          "note"
+        ]
+      },
+      "Stat": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": "string"
+          },
+          "requests": {
+            "type": "integer"
+          },
+          "cost": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "input": {
+            "type": "integer"
+          },
+          "output": {
+            "type": "integer"
+          },
+          "cache_read": {
+            "type": "integer"
+          }
+        },
+        "required": ["group", "requests", "cost", "input", "output", "cache_read"]
+      },
+      "BillPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Bill"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total"]
+      },
+      "AuditPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Audit"
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total"]
+      }
+    }
+  }
+}

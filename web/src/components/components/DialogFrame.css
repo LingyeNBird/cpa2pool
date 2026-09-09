@@ -1,3 +1,12 @@
-.dialog-frame { padding: 16px; }
-.dialog-frame::backdrop { background: #273d3040; }
-.dialog-frame .modal-box { width: min(720px, 100%); max-width: 720px; max-height: calc(100dvh - 40px); overflow-y: auto; }
+.dialog-frame {
+  padding: 16px;
+}
+.dialog-frame::backdrop {
+  background: #273d3040;
+}
+.dialog-frame .modal-box {
+  width: min(720px, 100%);
+  max-width: 720px;
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
