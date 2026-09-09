@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, shallowRef, useId } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref, shallowRef, useId } from 'vue';
 import {
   VueDatePicker,
   type InputParsedDate,
   type InternalModelValue,
   type ModelValue,
+  type TimeOverlaySlotProps,
 } from '@vuepic/vue-datepicker';
 import { format, isValid, parse } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { PhCalendarBlank, PhClock } from '@phosphor-icons/vue';
 import FieldLabel from './FieldLabel.vue';
+import CalendarTimeEditor from './components/CalendarTimeEditor.vue';
 import '@vuepic/vue-datepicker/dist/main.css';
 import './DateTimeField.css';
 const model = defineModel<string>({ required: true });
@@ -20,6 +22,8 @@ const picker = ref<InstanceType<typeof VueDatePicker>>();
 const portal = shallowRef<HTMLElement>();
 const open = ref(false);
 const selectedTime = ref('');
+const selectedDate = shallowRef<Date | null>(null);
+const timePreview = ref<HTMLElement>();
 const inputFormat = 'yyyy-MM-dd HH:mm';
 onMounted(() => {
   // Keep the popup in the modal's top layer, outside its scrolling panel.
@@ -53,7 +57,21 @@ function update(value: ModelValue) {
   root.value?.querySelector('input')?.setCustomValidity('');
 }
 function updateTimePreview(value: InternalModelValue) {
-  selectedTime.value = value instanceof Date && isValid(value) ? format(value, 'HH:mm') : '';
+  selectedDate.value = value instanceof Date && isValid(value) ? value : null;
+  selectedTime.value = selectedDate.value ? format(selectedDate.value, 'HH:mm') : '';
+}
+function confirmTime(value: { hours: number; minutes: number }, time: TimeOverlaySlotProps) {
+  const date = new Date(selectedDate.value || new Date());
+  date.setHours(value.hours, value.minutes, 0, 0);
+  picker.value?.updateInternalModelValue(date);
+  time.setHours(value.hours);
+  time.setMinutes(value.minutes);
+  time.setSeconds(0);
+  closeTimeEditor();
+}
+function closeTimeEditor() {
+  picker.value?.switchView('calendar');
+  nextTick(() => timePreview.value?.closest('button')?.focus());
 }
 </script>
 <template>
@@ -131,10 +149,19 @@ function updateTimePreview(value: InternalModelValue) {
         </button>
       </template>
       <template #clock-icon>
-        <span class="calendar-time-preview">
+        <span ref="timePreview" class="calendar-time-preview">
           <PhClock :size="19" />
           <span v-if="selectedTime">{{ selectedTime }}</span>
         </span>
+      </template>
+      <template #time-picker-overlay="time">
+        <CalendarTimeEditor
+          :hours="time.hours as number"
+          :minutes="time.minutes as number"
+          :date="selectedDate"
+          @confirm="confirmTime($event, time)"
+          @cancel="closeTimeEditor"
+        />
       </template>
     </VueDatePicker>
   </div>

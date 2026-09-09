@@ -1,0 +1,87 @@
+.calendar-time-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  background: var(--color-base-100);
+}
+.calendar-time-editor header,
+.calendar-time-editor footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.calendar-time-editor header span {
+  font-size: 0.78rem;
+  color: #617058;
+}
+.calendar-time-editor footer {
+  justify-content: flex-end;
+  margin-top: auto;
+}
+.calendar-time-editor .field {
+  gap: 4px;
+}
+.time-unit {
+  display: grid;
+  gap: 4px;
+}
+.time-slider {
+  appearance: none;
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.time-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border: 1px solid var(--surface-stroke);
+  border-radius: 3px;
+  background: var(--color-base-300);
+}
+.time-slider::-moz-range-track {
+  height: 4px;
+  border: 1px solid var(--surface-stroke);
+  border-radius: 3px;
+  background: var(--color-base-300);
+}
+.time-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 5px;
+  background: var(--color-primary);
+  box-shadow: 1px 1px 0 var(--surface-depth);
+}
+.time-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 5px;
+  background: var(--color-primary);
+  box-shadow: 1px 1px 0 var(--surface-depth);
+}
+.time-slider:focus-visible {
+  outline: none;
+}
+.time-slider:focus-visible::-webkit-slider-thumb {
+  border-color: var(--color-base-content);
+  background: var(--color-secondary);
+}
+.time-slider:focus-visible::-moz-range-thumb {
+  border-color: var(--color-base-content);
+  background: var(--color-secondary);
+}
+.sage-calendar:has(.calendar-time-editor) .dp--action-row,
+.sage-calendar:has(.calendar-time-editor) .dp--time-picker-overlay-container > .dp--button {
+  display: none;
+}
+.sage-calendar:has(.calendar-time-editor) .dp--time-picker-overlay-container {
+  height: 100%;
+}
