@@ -1,0 +1,104 @@
+.date-time-field .dp--theme-light,
+.sage-calendar {
+  --dp-font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --dp-background-color: var(--color-base-100);
+  --dp-text-color: var(--color-base-content);
+  --dp-hover-color: var(--color-base-200);
+  --dp-hover-text-color: var(--color-base-content);
+  --dp-primary-color: var(--color-primary);
+  --dp-primary-text-color: var(--color-primary-content);
+  --dp-primary-disabled-color: var(--color-base-300);
+  --dp-secondary-color: #84937b;
+  --dp-border-color: var(--surface-stroke);
+  --dp-menu-border-color: var(--surface-stroke);
+  --dp-border-color-hover: var(--color-base-content);
+  --dp-border-color-focus: var(--color-base-content);
+  --dp-icon-color: var(--surface-stroke);
+  --dp-hover-icon-color: var(--color-base-content);
+  --dp-disabled-color: var(--color-base-200);
+  --dp-disabled-color-text: #617058;
+  --dp-scroll-bar-background: var(--color-base-200);
+  --dp-scroll-bar-color: var(--surface-depth);
+  --dp-border-radius: 10px;
+  --dp-cell-border-radius: 7px;
+  --dp-font-size: 0.88rem;
+  --dp-cell-size: 34px;
+  --dp-cell-padding: 3px;
+  --dp-menu-padding: 10px;
+  --dp-action-button-height: 32px;
+  --dp-action-buttons-padding: 0 12px;
+  --dp-input-icon-padding: 38px;
+  --dp-common-transition: background-color 120ms, color 120ms;
+}
+.date-time-field > label {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.date-time-field .input {
+  min-height: 40px;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 10px;
+  padding-inline: 38px 34px;
+  font-variant-numeric: tabular-nums;
+}
+.date-time-field .dp--input-icon {
+  padding-inline: 2px;
+}
+.calendar-trigger {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+.calendar-trigger:focus-visible {
+  outline: 2px solid var(--color-base-content);
+  outline-offset: -2px;
+}
+.sage-calendar.dp--menu,
+.sage-calendar.dp--menu:focus {
+  border: 2px solid var(--surface-stroke);
+  border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--surface-depth);
+}
+.sage-calendar .dp--calendar-header,
+.sage-calendar .dp--month-year-select {
+  font-weight: 700;
+}
+.sage-calendar .dp--today {
+  border: 2px solid var(--surface-stroke);
+}
+.sage-calendar .dp--active {
+  box-shadow: inset 0 0 0 2px var(--surface-stroke);
+  font-weight: 750;
+}
+.sage-calendar .dp--action-button {
+  border: 2px solid var(--surface-stroke);
+  box-shadow: 2px 2px 0 var(--surface-depth);
+  font-weight: 650;
+  margin-inline-start: 8px;
+}
+.sage-calendar .dp--action-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+.sage-calendar .dp--action-button:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
+.sage-calendar .dp--action-row {
+  border-top: 1px solid var(--surface-depth);
+  padding: 12px;
+}
+.sage-calendar .dp--arrow-top,
+.sage-calendar .dp--arrow-bottom {
+  display: none;
+}
+.sage-calendar :focus-visible {
+  outline: 2px solid var(--color-base-content);
+  outline-offset: -2px;
+}

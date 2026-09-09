@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import type { Participant } from '../../types';
 import { iso } from '../../api';
 import './ReportFilters.css';
+import DateTimeField from './DateTimeField.vue';
 const props = defineProps<{ participants: Participant[]; mode: string }>();
 const emit = defineEmits<{ change: [params: URLSearchParams] }>();
 const pid = ref('');
@@ -37,11 +38,10 @@ function apply() {
         <option v-for="p in participants" :key="p.id" :value="p.id">{{ p.name }}</option>
       </select></label
     ><label v-if="mode === 'bills' || mode === 'stats'" class="field"
-      ><span>模型</span><input v-model="model" class="input" placeholder="全部" /></label
-    ><label v-if="mode !== 'periods'" class="field"
-      ><span>开始时间</span><input v-model="from" class="input" type="datetime-local" /></label
-    ><label v-if="mode !== 'periods'" class="field"
-      ><span>结束时间</span><input v-model="to" class="input" type="datetime-local" /></label
-    ><button class="btn btn-primary">查询</button>
+      ><span>模型</span><input v-model="model" class="input" placeholder="全部"
+    /></label>
+    <DateTimeField v-if="mode !== 'periods'" v-model="from" label="开始时间" />
+    <DateTimeField v-if="mode !== 'periods'" v-model="to" label="结束时间" />
+    <button class="btn btn-primary">查询</button>
   </form>
 </template>

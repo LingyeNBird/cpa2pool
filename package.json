@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@phosphor-icons/vue": "^2.2.1",
+    "@vuepic/vue-datepicker": "14.0.0",
+    "date-fns": "4.4.0",
     "vue": "^3.5.42"
   },
   "devDependencies": {

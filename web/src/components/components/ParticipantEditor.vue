@@ -4,6 +4,7 @@ import type { Participant } from '../../types';
 import { api, busy, localDate, iso } from '../../api';
 import DialogFrame from './DialogFrame.vue';
 import FieldLabel from './FieldLabel.vue';
+import DateTimeField from './DateTimeField.vue';
 const props = defineProps<{ participant: Participant | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const p = props.participant;
@@ -75,12 +76,12 @@ async function save() {
             v-model="efforts"
             class="input"
         /></label>
-        <label class="field full-width"
-          ><FieldLabel text="有效期" tip="留空表示参与者长期有效，额度仍按各自有效期限制。" /><input
-            v-model="expiry"
-            class="input"
-            type="datetime-local"
-        /></label>
+        <DateTimeField
+          v-model="expiry"
+          class="full-width"
+          label="有效期"
+          tip="留空表示参与者长期有效，额度仍按各自有效期限制。"
+        />
         <label class="check-field"
           ><input
             v-model="draft.enabled"

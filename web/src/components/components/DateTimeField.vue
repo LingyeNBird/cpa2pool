@@ -1,0 +1,110 @@
+<script setup lang="ts">
+import { onMounted, ref, shallowRef, useId } from 'vue';
+import { VueDatePicker, type InputParsedDate, type ModelValue } from '@vuepic/vue-datepicker';
+import { format, isValid, parse } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
+import { PhCalendarBlank } from '@phosphor-icons/vue';
+import FieldLabel from './FieldLabel.vue';
+import '@vuepic/vue-datepicker/dist/main.css';
+import './DateTimeField.css';
+const model = defineModel<string>({ required: true });
+defineProps<{ label: string; tip?: string; disabled?: boolean; required?: boolean }>();
+const id = useId();
+const root = ref<HTMLElement>();
+const picker = ref<InstanceType<typeof VueDatePicker>>();
+const portal = shallowRef<HTMLElement>();
+const open = ref(false);
+const inputFormat = 'yyyy-MM-dd HH:mm';
+onMounted(() => {
+  // Keep the popup in the modal's top layer, outside its scrolling panel.
+  portal.value = root.value?.closest('dialog') || document.body;
+});
+function preventDialogCancel(event: KeyboardEvent) {
+  if (open.value && event.key === 'Escape') event.preventDefault();
+}
+function parseInput(value: string) {
+  const date = parse(value, inputFormat, new Date());
+  return isValid(date) && format(date, inputFormat) === value ? date : null;
+}
+function validateInput(_event: Event | string, parsedDate: InputParsedDate) {
+  const input = root.value?.querySelector('input');
+  input?.setCustomValidity(
+    input.value && !parsedDate ? '请输入有效日期和时间，格式为 YYYY-MM-DD HH:mm。' : '',
+  );
+}
+function update(value: ModelValue) {
+  model.value = typeof value === 'string' ? value : '';
+  root.value?.querySelector('input')?.setCustomValidity('');
+}
+</script>
+<template>
+  <div ref="root" class="field date-time-field" @keydown.esc.capture="preventDialogCancel">
+    <label :for="id"
+      ><FieldLabel v-if="tip" :text="label" :tip="tip" /><span v-else>{{ label }}</span></label
+    >
+    <VueDatePicker
+      ref="picker"
+      :model-value="model || null"
+      model-type="yyyy-MM-dd'T'HH:mm"
+      :locale="zhCN"
+      :disabled="disabled"
+      :input-attrs="{ id, required, autocomplete: 'off', clearable: !required }"
+      :formats="{ input: inputFormat, preview: inputFormat }"
+      :text-input="{
+        format: parseInput,
+        openMenu: false,
+        enterSubmit: true,
+        tabSubmit: true,
+        applyOnBlur: true,
+      }"
+      :time-config="{ is24: true, enableSeconds: false }"
+      :action-row="{
+        selectBtnLabel: '确定',
+        cancelBtnLabel: '取消',
+        nowBtnLabel: '此刻',
+        showNow: true,
+        showPreview: false,
+      }"
+      :aria-labels="{
+        input: label,
+        menu: `${label}选择器`,
+        calendarIcon: '选择日期',
+        clearInput: '清空日期',
+        nextMonth: '下个月',
+        prevMonth: '上个月',
+        nextYear: '下一年',
+        prevYear: '上一年',
+        openYearsOverlay: '选择年份',
+        openMonthsOverlay: '选择月份',
+        openTimePicker: '选择时间',
+        closeTimePicker: '返回日期',
+        timePicker: '时间选择器',
+        toggleOverlay: '切换选择器',
+      }"
+      :ui="{ input: 'input', menu: 'sage-calendar' }"
+      :teleport="portal || false"
+      :transitions="false"
+      :config="{ allowPreventDefault: true, onInternalKeydown: preventDialogCancel }"
+      arrow-navigation
+      placeholder="YYYY-MM-DD HH:mm"
+      @open="open = true"
+      @closed="open = false"
+      @text-input="validateInput"
+      @update:model-value="update"
+    >
+      <template #input-icon>
+        <button
+          type="button"
+          class="calendar-trigger"
+          :aria-label="`选择${label}`"
+          aria-haspopup="dialog"
+          :aria-expanded="open"
+          :disabled="disabled"
+          @click.stop="picker?.toggleMenu()"
+        >
+          <PhCalendarBlank :size="19" />
+        </button>
+      </template>
+    </VueDatePicker>
+  </div>
+</template>

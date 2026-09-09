@@ -4,6 +4,7 @@ import type { Quota } from '../../../types';
 import { api, busy, iso, localDate } from '../../../api';
 import DialogFrame from '../DialogFrame.vue';
 import FieldLabel from '../FieldLabel.vue';
+import DateTimeField from '../DateTimeField.vue';
 const props = defineProps<{ participantId: string; quota: Quota | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const q = props.quota;
@@ -62,18 +63,14 @@ async function save() {
             <option value="month">每月</option>
           </select></label
         >
-        <label class="field"
-          ><span>开始时间</span
-          ><input v-model="start" class="input" type="datetime-local" :disabled="!!q" required
-        /></label>
-        <label class="field full-width"
-          ><FieldLabel
-            text="有效期"
-            tip="留空表示长期有效。多个生效额度同时约束请求，任一用尽即停止使用。" /><input
-            v-model="expiry"
-            class="input"
-            type="datetime-local" /></label
-        ><label class="check-field"
+        <DateTimeField v-model="start" label="开始时间" :disabled="!!q" required />
+        <DateTimeField
+          v-model="expiry"
+          class="full-width"
+          label="有效期"
+          tip="留空表示长期有效。多个生效额度同时约束请求，任一用尽即停止使用。"
+        />
+        <label class="check-field"
           ><input
             v-model="draft.enabled"
             class="toggle toggle-primary"
