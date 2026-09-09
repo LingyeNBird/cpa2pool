@@ -3,7 +3,8 @@ import { ref } from 'vue';
 import type { QuotaView } from '../../../types';
 import { api, busy, money } from '../../../api';
 import DialogFrame from '../DialogFrame.vue';
-import FieldLabel from '../FieldLabel.vue';
+import NumberField from '../NumberField.vue';
+import SelectField from '../SelectField.vue';
 const props = defineProps<{ quota: QuotaView }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const action = ref('add');
@@ -46,25 +47,27 @@ async function save() {
         <span class="amount">{{ money(quota.current.remaining) }}</span>
       </div>
       <div class="form-grid">
-        <label class="field full-width"
-          ><FieldLabel text="操作" :tip="tips[action]" /><select v-model="action" class="select">
-            <option value="add">增减额度</option>
-            <option value="set_limit">设置限额总额</option>
-            <option value="set_remaining">设置当前剩余</option>
-            <option value="reset">重置已用量</option>
-            <option value="new_period">提前开始新周期</option>
-          </select></label
-        >
-        <label v-if="!['reset', 'new_period'].includes(action)" class="field full-width"
-          ><span>金额 / USD</span
-          ><input
-            v-model="amount"
-            class="input"
-            type="number"
-            :min="action === 'add' ? undefined : 0"
-            step="any"
-            required
-        /></label>
+        <SelectField
+          v-model="action"
+          class="full-width"
+          label="操作"
+          :tip="tips[action]"
+          :options="[
+            { value: 'add', label: '增减额度' },
+            { value: 'set_limit', label: '设置限额总额' },
+            { value: 'set_remaining', label: '设置当前剩余' },
+            { value: 'reset', label: '重置已用量' },
+            { value: 'new_period', label: '提前开始新周期' },
+          ]"
+        />
+        <NumberField
+          v-if="!['reset', 'new_period'].includes(action)"
+          v-model="amount"
+          class="full-width"
+          label="金额 / USD"
+          :min="action === 'add' ? undefined : 0"
+          required
+        />
         <label v-if="action === 'reset'" class="check-field full-width"
           ><input
             v-model="restart"

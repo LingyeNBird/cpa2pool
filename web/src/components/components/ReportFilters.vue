@@ -4,6 +4,7 @@ import type { Participant } from '../../types';
 import { iso } from '../../api';
 import './ReportFilters.css';
 import DateTimeField from './DateTimeField.vue';
+import SelectField from './SelectField.vue';
 const props = defineProps<{ participants: Participant[]; mode: string }>();
 const emit = defineEmits<{ change: [params: URLSearchParams] }>();
 const pid = ref('');
@@ -31,13 +32,15 @@ function apply() {
 </script>
 <template>
   <form class="report-filters" @submit.prevent="apply">
-    <label class="field"
-      ><span>参与者</span
-      ><select v-model="pid" class="select">
-        <option value="">全部</option>
-        <option v-for="p in participants" :key="p.id" :value="p.id">{{ p.name }}</option>
-      </select></label
-    ><label v-if="mode === 'bills' || mode === 'stats'" class="field"
+    <SelectField
+      v-model="pid"
+      label="参与者"
+      :options="[
+        { value: '', label: '全部' },
+        ...participants.map((p) => ({ value: p.id, label: p.name })),
+      ]"
+    />
+    <label v-if="mode === 'bills' || mode === 'stats'" class="field"
       ><span>模型</span><input v-model="model" class="input" placeholder="全部"
     /></label>
     <DateTimeField v-if="mode !== 'periods'" v-model="from" label="开始时间" />

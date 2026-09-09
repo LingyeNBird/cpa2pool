@@ -4,6 +4,8 @@ import type { Price } from '../../types';
 import { api, busy } from '../../api';
 import DialogFrame from './DialogFrame.vue';
 import FieldLabel from './FieldLabel.vue';
+import NumberField from './NumberField.vue';
+import SelectField from './SelectField.vue';
 const props = defineProps<{ price: Price | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const draft = reactive<Price>({
@@ -59,17 +61,15 @@ const rates = [
             :readonly="!!price"
             required
         /></label>
-        <label v-for="rate in rates" :key="rate.key" class="field"
-          ><FieldLabel
-            :text="`${rate.label}单价`"
-            tip="USD / 百万 Token。缓存读取与普通输入分开计算，推理 Token 不重复加价。" /><input
-            v-model="draft[rate.key]"
-            class="input"
-            type="number"
-            min="0"
-            step="any"
-            required
-        /></label>
+        <NumberField
+          v-for="rate in rates"
+          :key="rate.key"
+          v-model="draft[rate.key]"
+          :label="`${rate.label}单价`"
+          tip="USD / 百万 Token。缓存读取与普通输入分开计算，推理 Token 不重复加价。"
+          min="0"
+          required
+        />
         <div class="full-width"><hr class="divider-line" /></div>
         <label class="check-field"
           ><input
@@ -77,77 +77,63 @@ const rates = [
             class="toggle toggle-primary"
             type="checkbox"
           />FAST / priority</label
-        ><label class="field"
-          ><span>倍率</span
-          ><input
-            v-model="draft.priority_multiplier"
-            class="input"
-            type="number"
-            min="0.000001"
-            step="any"
-            :disabled="!draft.priority_enabled"
-        /></label>
+        >
+        <NumberField
+          v-model="draft.priority_multiplier"
+          label="倍率"
+          min="0.000001"
+          :disabled="!draft.priority_enabled"
+        />
         <label class="check-field"
           ><input
             v-model="draft.long_enabled"
             class="toggle toggle-primary"
             type="checkbox"
           />长上下文</label
-        ><label class="field"
-          ><FieldLabel
-            text="Token 阈值"
-            tip="总输入（含缓存）超过阈值时，整笔请求采用长上下文倍率。" /><input
-            v-model.number="draft.long_threshold"
-            class="input"
-            type="number"
-            min="0"
-            step="1"
-            :disabled="!draft.long_enabled"
-        /></label>
-        <label class="field"
-          ><span>长上下文输入倍率</span
-          ><input
-            v-model="draft.long_input_multiplier"
-            class="input"
-            type="number"
-            min="0.000001"
-            step="any"
-            :disabled="!draft.long_enabled" /></label
-        ><label class="field"
-          ><span>长上下文输出倍率</span
-          ><input
-            v-model="draft.long_output_multiplier"
-            class="input"
-            type="number"
-            min="0.000001"
-            step="any"
-            :disabled="!draft.long_enabled"
-        /></label>
+        >
+        <NumberField
+          v-model.number="draft.long_threshold"
+          label="Token 阈值"
+          tip="总输入（含缓存）超过阈值时，整笔请求采用长上下文倍率。"
+          min="0"
+          step="1"
+          :disabled="!draft.long_enabled"
+        />
+        <NumberField
+          v-model="draft.long_input_multiplier"
+          label="长上下文输入倍率"
+          min="0.000001"
+          :disabled="!draft.long_enabled"
+        />
+        <NumberField
+          v-model="draft.long_output_multiplier"
+          label="长上下文输出倍率"
+          min="0.000001"
+          :disabled="!draft.long_enabled"
+        />
         <label class="check-field"
           ><input
             v-model="draft.model_enabled"
             class="toggle toggle-primary"
             type="checkbox"
           />模型额外倍率</label
-        ><label class="field"
-          ><span>倍率</span
-          ><input
-            v-model="draft.model_multiplier"
-            class="input"
-            type="number"
-            min="0.000001"
-            step="any"
-            :disabled="!draft.model_enabled"
-        /></label>
-        <label class="field full-width"
-          ><FieldLabel
-            text="组合方式"
-            tip="相乘：所有命中倍率相乘。最大值：输入与输出分别取命中倍率中的最大值。"
-          /><select v-model="draft.combination" class="select">
-            <option value="multiply">相乘</option>
-            <option value="max">取最大值</option>
-          </select></label
         >
+        <NumberField
+          v-model="draft.model_multiplier"
+          label="倍率"
+          min="0.000001"
+          :disabled="!draft.model_enabled"
+        />
+        <SelectField
+          v-model="draft.combination"
+          class="full-width"
+          label="组合方式"
+          tip="相乘：所有命中倍率相乘。最大值：输入与输出分别取命中倍率中的最大值。"
+          :options="[
+            { value: 'multiply', label: '相乘' },
+            { value: 'max', label: '取最大值' },
+          ]"
+        />
       </div>
       <div class="form-actions">
         <button type="button" class="btn" @click="emit('close')">取消</button

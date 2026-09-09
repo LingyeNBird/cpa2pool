@@ -7,6 +7,7 @@ import SummaryStats from './components/SummaryStats.vue';
 import BillsTable from './components/BillsTable.vue';
 import PeriodsTable from './components/PeriodsTable.vue';
 import AuditsTable from './components/AuditsTable.vue';
+import SelectField from './components/SelectField.vue';
 import './ReportsPage.css';
 const participants = ref<Participant[]>([]);
 const names = computed(() => Object.fromEntries(participants.value.map((p) => [p.id, p.name])));
@@ -112,17 +113,20 @@ onMounted(() =>
           :periods="history"
           :names="names"
           :quota-names="quotaNames"
-        /><template v-else
-          ><label class="stats-group"
-            ><span>分组</span
-            ><select v-model="group" class="select" @change="act(load)">
-              <option value="model">按模型</option>
-              <option value="participant">按参与者</option>
-              <option value="day">按日期</option>
-            </select></label
-          >
+        /><template v-else>
+          <SelectField
+            v-model="group"
+            class="stats-group"
+            label="分组"
+            :options="[
+              { value: 'model', label: '按模型' },
+              { value: 'participant', label: '按参与者' },
+              { value: 'day', label: '按日期' },
+            ]"
+            @change="act(load)"
+          />
           <div v-if="!stats.length" class="empty">暂无消费</div>
-          <div v-else class="table-wrap">
+          <div v-else class="table-wrap table-list">
             <table class="table">
               <thead>
                 <tr>

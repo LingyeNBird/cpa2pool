@@ -3,8 +3,9 @@ import { reactive, ref } from 'vue';
 import type { Quota } from '../../../types';
 import { api, busy, iso, localDate } from '../../../api';
 import DialogFrame from '../DialogFrame.vue';
-import FieldLabel from '../FieldLabel.vue';
 import DateTimeField from '../DateTimeField.vue';
+import NumberField from '../NumberField.vue';
+import SelectField from '../SelectField.vue';
 const props = defineProps<{ participantId: string; quota: Quota | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const q = props.quota;
@@ -44,25 +45,26 @@ async function save() {
       <div v-if="error" class="alert alert-error error-bar">{{ error }}</div>
       <div class="form-grid">
         <label class="field"
-          ><span>名称</span><input v-model="draft.name" class="input" required /></label
-        ><label class="field"
-          ><FieldLabel text="限额总额 / USD" tip="修改限额不清空已用量，也不改变当前周期。" /><input
-            v-model="draft.limit"
-            class="input"
-            type="number"
-            min="0"
-            step="any"
-            required
+          ><span>名称</span><input v-model="draft.name" class="input" required
         /></label>
-        <label class="field"
-          ><span>周期</span
-          ><select v-model="draft.period" class="select" :disabled="!!q">
-            <option value="none">长期余额</option>
-            <option value="day">每日</option>
-            <option value="week">每周</option>
-            <option value="month">每月</option>
-          </select></label
-        >
+        <NumberField
+          v-model="draft.limit"
+          label="限额总额 / USD"
+          tip="修改限额不清空已用量，也不改变当前周期。"
+          min="0"
+          required
+        />
+        <SelectField
+          v-model="draft.period"
+          label="周期"
+          :disabled="!!q"
+          :options="[
+            { value: 'none', label: '长期余额' },
+            { value: 'day', label: '每日' },
+            { value: 'week', label: '每周' },
+            { value: 'month', label: '每月' },
+          ]"
+        />
         <DateTimeField v-model="start" label="开始时间" :disabled="!!q" required />
         <DateTimeField
           v-model="expiry"
