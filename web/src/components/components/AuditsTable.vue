@@ -23,7 +23,7 @@ const actions: Record<string, string> = {
 </script>
 <template>
   <div v-if="!audits.length" class="empty">暂无调整记录</div>
-  <div v-else class="table-wrap table-list">
+  <div v-else class="table-wrap table-list table-list-inset">
     <table class="table">
       <thead>
         <tr>

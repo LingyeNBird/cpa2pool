@@ -51,7 +51,7 @@ onMounted(() => act(load));
     <div class="panel">
       <div v-if="loading" class="empty">读取中</div>
       <div v-else-if="!prices.length" class="empty">添加模型价格后可开始计费</div>
-      <div v-else class="table-wrap table-list">
+      <div v-else class="table-wrap table-list table-list-inset">
         <table class="table">
           <thead>
             <tr>

@@ -126,7 +126,7 @@ onMounted(() =>
             @change="act(load)"
           />
           <div v-if="!stats.length" class="empty">暂无消费</div>
-          <div v-else class="table-wrap table-list">
+          <div v-else class="table-wrap table-list table-list-inset">
             <table class="table">
               <thead>
                 <tr>

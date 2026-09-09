@@ -176,7 +176,8 @@ h3 {
 }
 .panel .input,
 .panel .select,
-.panel .textarea {
+.panel .textarea,
+.panel .number-control {
   --field-depth: 4px;
 }
 .input:disabled,
@@ -263,7 +264,7 @@ h3 {
 .table-wrap {
   overflow-x: auto;
 }
-/* Choose table-list for primary datasets and table-detail for compact read-only breakdowns. */
+/* Large datasets: table-list + table-list-raised or table-list-inset. Compact breakdowns: table-detail. */
 .table-list,
 .table-detail {
   border: 2px solid var(--surface-stroke);
@@ -271,7 +272,13 @@ h3 {
 }
 .table-list {
   border-radius: 14px;
+}
+.table-list-raised {
   box-shadow: 3px 3px 0 var(--surface-depth);
+}
+.table-list-inset {
+  padding: 4px 0 0 4px;
+  box-shadow: inset 4px 4px 0 var(--surface-depth);
 }
 .table-detail {
   border-radius: 9px;

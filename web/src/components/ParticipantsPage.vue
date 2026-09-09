@@ -78,7 +78,7 @@ onMounted(() => act(load));
       <div v-else-if="!shown.length" class="empty">
         {{ search ? '没有匹配的参与者' : '添加第一位参与者' }}
       </div>
-      <div v-else class="table-wrap table-list">
+      <div v-else class="table-wrap table-list table-list-inset">
         <table class="table">
           <thead>
             <tr>
