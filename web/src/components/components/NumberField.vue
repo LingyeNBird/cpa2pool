@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends string | number">
-import { ref, useId } from 'vue';
+import { computed, useId } from 'vue';
 import Big from 'big.js';
 import { PhMinus, PhPlus } from '@phosphor-icons/vue';
 import FieldLabel from './FieldLabel.vue';
@@ -18,15 +18,21 @@ const props = withDefaults(
   { step: 'any' },
 );
 const id = useId();
-const input = ref<HTMLInputElement>();
 const numericModel = typeof model.value === 'number';
+const current = computed(() => new Big(model.value || 0));
+const decreaseDisabled = computed(
+  () => props.disabled || (props.min !== undefined && current.value.lte(props.min)),
+);
+const increaseDisabled = computed(
+  () => props.disabled || (props.max !== undefined && current.value.gte(props.max)),
+);
 function update(value: string) {
   model.value = (numericModel && value !== '' ? Number(value) : value) as T;
 }
 function adjust(direction: number) {
-  if (props.disabled || !input.value) return;
+  if (direction < 0 ? decreaseDisabled.value : increaseDisabled.value) return;
   const increment = props.step === 'any' ? 1 : props.step;
-  let value = new Big(input.value.value || 0).plus(new Big(increment).times(direction));
+  let value = current.value.plus(new Big(increment).times(direction));
   if (props.min !== undefined && value.lt(props.min)) value = new Big(props.min);
   if (props.max !== undefined && value.gt(props.max)) value = new Big(props.max);
   update(value.toFixed());
@@ -42,14 +48,13 @@ function adjust(direction: number) {
         type="button"
         class="number-step"
         :aria-label="`${label}减小`"
-        :disabled="disabled"
+        :disabled="decreaseDisabled"
         @click="adjust(-1)"
       >
         <PhMinus :size="17" weight="bold" />
       </button>
       <input
         :id="id"
-        ref="input"
         :value="model"
         class="input number-value"
         type="number"
@@ -66,7 +71,7 @@ function adjust(direction: number) {
         type="button"
         class="number-step"
         :aria-label="`${label}增大`"
-        :disabled="disabled"
+        :disabled="increaseDisabled"
         @click="adjust(1)"
       >
         <PhPlus :size="17" weight="bold" />

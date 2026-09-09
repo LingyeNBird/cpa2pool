@@ -38,6 +38,11 @@
   background: var(--color-base-200);
   color: var(--color-base-content);
   cursor: pointer;
+  box-shadow: inset -2px -2px 0 var(--surface-depth);
+  transition:
+    background-color 100ms,
+    box-shadow 100ms,
+    color 100ms;
 }
 .number-step:first-child {
   border-right: 2px solid var(--surface-stroke);
@@ -48,8 +53,14 @@
 .number-step:hover:not(:disabled) {
   background: var(--color-primary);
 }
+.number-step:active:not(:disabled),
+.number-step:disabled {
+  box-shadow: inset var(--field-depth) var(--field-depth) 0 var(--surface-depth);
+  border-color: var(--surface-depth);
+}
 .number-step:active:not(:disabled) {
-  box-shadow: inset 2px 2px 0 var(--surface-depth);
+  background: var(--color-primary);
+  color: var(--color-primary-content);
 }
 .number-step:focus-visible {
   outline: 2px solid var(--color-base-content);
@@ -57,8 +68,12 @@
 }
 .number-control[data-disabled] {
   border-color: #96a38d;
-  opacity: 0.65;
+}
+.number-control .number-value:disabled {
+  box-shadow: inset var(--field-depth) var(--field-depth) 0 var(--surface-depth);
 }
 .number-step:disabled {
+  background: var(--color-base-200);
+  color: #84937b;
   cursor: not-allowed;
 }
