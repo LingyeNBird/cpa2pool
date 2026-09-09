@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, shallowRef, useId } from 'vue';
+import { onBeforeUnmount, onMounted, ref, shallowRef, useId } from 'vue';
 import { VueDatePicker, type InputParsedDate, type ModelValue } from '@vuepic/vue-datepicker';
 import { format, isValid, parse } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -18,7 +18,17 @@ const inputFormat = 'yyyy-MM-dd HH:mm';
 onMounted(() => {
   // Keep the popup in the modal's top layer, outside its scrolling panel.
   portal.value = root.value?.closest('dialog') || document.body;
+  if (portal.value instanceof HTMLDialogElement) {
+    portal.value.addEventListener('cancel', dismissCalendarFirst, true);
+  }
 });
+onBeforeUnmount(() => portal.value?.removeEventListener('cancel', dismissCalendarFirst, true));
+function dismissCalendarFirst(event: Event) {
+  if (!open.value) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  picker.value?.closeMenu();
+}
 function preventDialogCancel(event: KeyboardEvent) {
   if (open.value && event.key === 'Escape') event.preventDefault();
 }
@@ -83,7 +93,12 @@ function update(value: ModelValue) {
       }"
       :ui="{ input: 'input', menu: 'sage-calendar' }"
       :teleport="portal || false"
-      :transitions="false"
+      :transitions="{
+        menuAppearTop: 'calendar-above',
+        menuAppearBottom: 'calendar-below',
+        open: 'calendar-overlay',
+        close: 'calendar-overlay',
+      }"
       :config="{ allowPreventDefault: true, onInternalKeydown: preventDialogCancel }"
       arrow-navigation
       placeholder="YYYY-MM-DD HH:mm"

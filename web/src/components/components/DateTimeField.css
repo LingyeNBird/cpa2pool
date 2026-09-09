@@ -63,6 +63,7 @@
 .sage-calendar.dp--menu:focus {
   border: 2px solid var(--surface-stroke);
   border-radius: 14px;
+  overflow: hidden;
   box-shadow: 4px 4px 0 var(--surface-depth);
 }
 .sage-calendar .dp--calendar-header,
@@ -101,4 +102,47 @@
 .sage-calendar :focus-visible {
   outline: 2px solid var(--color-base-content);
   outline-offset: -2px;
+}
+.calendar-above-enter-active,
+.calendar-below-enter-active,
+.calendar-overlay-enter-active {
+  transition:
+    opacity 180ms cubic-bezier(0.23, 1, 0.32, 1),
+    scale 180ms cubic-bezier(0.23, 1, 0.32, 1),
+    translate 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.calendar-above-leave-active,
+.calendar-below-leave-active,
+.calendar-overlay-leave-active {
+  transition:
+    opacity 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    scale 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    translate 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.calendar-above-enter-active,
+.calendar-above-leave-active {
+  transform-origin: bottom center;
+}
+.calendar-below-enter-active,
+.calendar-below-leave-active {
+  transform-origin: top center;
+}
+.calendar-above-enter-from,
+.calendar-above-leave-to {
+  opacity: 0;
+  scale: 0.98;
+  translate: 0 5px;
+  transform-origin: bottom center;
+}
+.calendar-below-enter-from,
+.calendar-below-leave-to {
+  opacity: 0;
+  scale: 0.98;
+  translate: 0 -5px;
+  transform-origin: top center;
+}
+.calendar-overlay-enter-from,
+.calendar-overlay-leave-to {
+  opacity: 0;
+  scale: 0.99;
 }
