@@ -34,6 +34,11 @@ func(m *Meter) JSON(body []byte){
 func(m *Meter) Stream(chunk []byte){
  m.buffer=append(m.buffer,chunk...)
  for {i:=bytes.IndexByte(m.buffer,'\n');if i<0{break};line:=bytes.TrimSpace(m.buffer[:i]);if bytes.HasPrefix(line,[]byte("data:")){m.JSON(bytes.TrimSpace(line[5:]))};m.buffer=m.buffer[i+1:]}
+ // CPA can pass complete SSE data lines without trailing newlines.
+ line:=bytes.TrimSpace(m.buffer)
+ payload:=line
+ if bytes.HasPrefix(line,[]byte("data:")){payload=bytes.TrimSpace(line[5:])}
+ if json.Valid(payload)||bytes.Equal(payload,[]byte("[DONE]")){m.JSON(payload);m.buffer=nil}
 }
 func(m *Meter) Flush(){line:=bytes.TrimSpace(m.buffer);if bytes.HasPrefix(line,[]byte("data:")){m.JSON(bytes.TrimSpace(line[5:]))}else{m.JSON(line)};m.buffer=nil}
 func RequestPolicy(body []byte,model string)(string,string,string){var root map[string]any;_ = json.Unmarshal(body,&root);effort:=str(root,"reasoning_effort");if effort==""{effort=str(object(root["reasoning"]),"effort")};if effort==""{effort=str(object(root["output_config"]),"effort")};if effort==""{effort=str(object(object(root["generationConfig"])["thinkingConfig"]),"thinkingLevel")};if i:=strings.LastIndex(model,"(");i>=0&&strings.HasSuffix(model,")"){if effort==""{effort=model[i+1:len(model)-1]};model=model[:i]};if effort==""{effort="default"};return model,strings.ToLower(effort),str(root,"service_tier")}
