@@ -220,8 +220,9 @@ h3 {
 }
 .toggle:focus-visible,
 .checkbox:focus-visible {
-  outline: 2px solid var(--color-base-content);
-  outline-offset: 3px;
+  outline: none;
+  border-color: var(--color-base-content);
+  box-shadow: inset 0 0 0 1px var(--color-base-content);
 }
 .toggle:disabled {
   opacity: 0.5;
@@ -262,23 +263,68 @@ h3 {
 .table-wrap {
   overflow-x: auto;
 }
+/* Choose table-list for primary datasets and table-detail for compact read-only breakdowns. */
+.table-list,
+.table-detail {
+  border: 2px solid var(--surface-stroke);
+  background: var(--color-base-100);
+}
+.table-list {
+  border-radius: 14px;
+  box-shadow: 3px 3px 0 var(--surface-depth);
+}
+.table-detail {
+  border-radius: 9px;
+}
 .table {
   width: 100%;
   font-size: 0.88rem;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 .table th {
-  color: #53644d;
-  font-weight: 650;
+  color: var(--color-base-content);
+  font-weight: 750;
 }
 .table th,
 .table td {
   padding: 15px 12px;
 }
-.table tbody tr {
-  border-bottom: 1px solid #e0e7dc;
+.table th {
+  border-bottom: 2px solid var(--surface-stroke);
 }
-.table tbody tr:last-child {
+.table td {
+  border-bottom: 1px solid var(--surface-depth);
+}
+.table tbody tr:last-child td {
   border-bottom: none;
+}
+.table-list .table th {
+  background: var(--color-base-300);
+  padding-block: 16px;
+}
+.table-list .table th + th,
+.table-list .table td + td {
+  border-left: 1px solid #d3ddcd;
+}
+.table-list .table tbody tr:nth-child(even) {
+  background: #f0f5ed;
+}
+.table-list .table tbody tr:hover {
+  background: #e7efdf;
+}
+.table-detail .table {
+  font-size: 0.81rem;
+}
+.table-detail .table th {
+  background: var(--color-base-200);
+  padding: 9px 10px;
+}
+.table-detail .table td {
+  padding: 10px;
+}
+.table-detail .table td:first-child {
+  font-weight: 650;
 }
 .amount {
   font-variant-numeric: tabular-nums;

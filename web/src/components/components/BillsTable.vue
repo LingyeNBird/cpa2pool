@@ -8,7 +8,7 @@ const selected = ref<Bill | null>(null);
 </script>
 <template>
   <div v-if="!bills.length" class="empty">暂无请求账单</div>
-  <div v-else class="table-wrap">
+  <div v-else class="table-wrap table-list">
     <table class="table">
       <thead>
         <tr>

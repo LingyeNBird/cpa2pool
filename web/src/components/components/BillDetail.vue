@@ -27,7 +27,7 @@ const factors: Record<string, string> = {
       <dd>{{ bill.service_tier || '标准' }}</dd>
     </dl>
     <hr class="divider-line" />
-    <div class="table-wrap">
+    <div class="table-wrap table-detail">
       <table class="table">
         <thead>
           <tr>

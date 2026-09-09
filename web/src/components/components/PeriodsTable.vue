@@ -9,7 +9,7 @@ defineProps<{
 </script>
 <template>
   <div v-if="!periods.length" class="empty">暂无额度周期</div>
-  <div v-else class="table-wrap">
+  <div v-else class="table-wrap table-list">
     <table class="table">
       <thead>
         <tr>
