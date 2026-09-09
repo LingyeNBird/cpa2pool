@@ -10,10 +10,37 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
   };
   if (body !== undefined) options.body = JSON.stringify(body);
   const response = await fetch(`/v0/management/cpa2pool/${path}`, options);
-  if (response.status === 401) authenticated.value = false;
+  if (response.status === 401) logout();
   const data = await response.json();
   if (!response.ok) throw new Error(data.error || `请求失败 (${response.status})`);
   return data.data as T;
+}
+function hostManagementKey(): string {
+  // CPA Management Center ed5f1c4: shared-origin storage uses reversible enc::v1:: obfuscation.
+  try {
+    if (localStorage.getItem('isLoggedIn') !== 'true') return '';
+    let stored = localStorage.getItem('cli-proxy-auth');
+    if (!stored) return '';
+    const prefix = 'enc::v1::';
+    if (stored.startsWith(prefix)) {
+      const mask = new TextEncoder().encode(
+        `cli-proxy-api-webui::secure-storage|${window.location.host}|${navigator.userAgent}`,
+      );
+      const bytes = Uint8Array.from(atob(stored.slice(prefix.length)), (char, index) => {
+        return char.charCodeAt(0) ^ mask[index % mask.length];
+      });
+      stored = new TextDecoder().decode(bytes);
+    }
+    const { state } = JSON.parse(stored);
+    if (new URL(state.apiBase).href !== `${window.location.origin}/`) return '';
+    return typeof state.managementKey === 'string' ? state.managementKey.trim() : '';
+  } catch {
+    return '';
+  }
+}
+export async function restoreLogin() {
+  const savedKey = hostManagementKey();
+  if (savedKey) await login(savedKey);
 }
 export async function login(value: string) {
   key.value = value;

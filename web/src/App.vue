@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import {
   PhUsers,
   PhSlidersHorizontal,
@@ -7,13 +7,14 @@ import {
   PhChartLine,
   PhQuestion,
 } from '@phosphor-icons/vue';
-import { authenticated, login, logout, act, failure, busy } from './api';
+import { authenticated, login, restoreLogin, logout, act, failure, busy } from './api';
 import ParticipantsPage from './components/ParticipantsPage.vue';
 import PricesPage from './components/PricesPage.vue';
 import ReportsPage from './components/ReportsPage.vue';
 import PageActions from './components/PageActions.vue';
 import './App.css';
 const credential = ref('');
+const restoring = ref(true);
 const section = ref('participants');
 const revision = ref(0);
 const tabs = [
@@ -27,6 +28,13 @@ async function signIn() {
     credential.value = '';
   });
 }
+onMounted(async () => {
+  try {
+    await act(restoreLogin);
+  } finally {
+    restoring.value = false;
+  }
+});
 </script>
 <template>
   <main class="shell">
@@ -41,10 +49,13 @@ async function signIn() {
       <span>{{ failure }}</span
       ><button class="btn btn-sm btn-ghost" @click="failure = ''">关闭</button>
     </div>
-    <form v-if="!authenticated" class="panel login-panel" @submit.prevent="signIn">
+    <div v-if="restoring" class="panel login-panel" role="status">正在连接…</div>
+    <form v-else-if="!authenticated" class="panel login-panel" @submit.prevent="signIn">
       <h2>
         连接管理中心
-        <span class="tooltip tooltip-bottom" data-tip="使用 CPA 管理密钥。仅保存在当前页面内存中。"
+        <span
+          class="tooltip tooltip-bottom"
+          data-tip="自动使用同源 CPA 管理面板记住的登录。手动输入的密钥仅保存在当前页面内存中。"
           ><PhQuestion :size="19" tabindex="0" aria-label="连接说明"
         /></span>
       </h2>
