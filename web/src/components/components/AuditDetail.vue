@@ -18,12 +18,24 @@ const emit = defineEmits<{ close: [] }>();
     </dl>
     <div class="audit-snapshots">
       <section>
-        <h3>调整前</h3>
-        <pre>{{ JSON.stringify(audit.before, null, 2) }}</pre>
+        <header>
+          <h3>调整前</h3>
+          <span>JSON</span>
+        </header>
+        <pre
+          tabindex="0"
+          aria-label="调整前 JSON"
+        ><code>{{ JSON.stringify(audit.before, null, 2) }}</code></pre>
       </section>
       <section>
-        <h3>调整后</h3>
-        <pre>{{ JSON.stringify(audit.after, null, 2) }}</pre>
+        <header>
+          <h3>调整后</h3>
+          <span>JSON</span>
+        </header>
+        <pre
+          tabindex="0"
+          aria-label="调整后 JSON"
+        ><code>{{ JSON.stringify(audit.after, null, 2) }}</code></pre>
       </section>
     </div></DialogFrame
   >
