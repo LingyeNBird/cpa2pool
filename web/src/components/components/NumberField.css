@@ -30,7 +30,17 @@
   margin: 0;
   -webkit-appearance: none;
 }
+@property --number-sink {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
 .number-step {
+  --number-sink: 0px;
+  --number-edge-width: 2px;
+  --number-edge-start: 0px;
+  position: relative;
+  z-index: 1;
   display: grid;
   place-items: center;
   padding: 0;
@@ -42,32 +52,65 @@
   transition:
     background-color 100ms,
     box-shadow 100ms,
-    color 100ms;
+    color 100ms,
+    --number-sink 100ms;
+}
+.number-step::before {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: calc(100% + var(--number-sink));
+  pointer-events: none;
+  background: var(--surface-stroke);
+  /* The top anchor stays fixed; the diagonal joins it to the translated vertical edge. */
+  clip-path: polygon(
+    var(--number-edge-start) 0,
+    calc(var(--number-edge-start) + var(--number-edge-width)) 0,
+    calc(var(--number-edge-start) + var(--number-sink) + var(--number-edge-width))
+      var(--number-sink),
+    calc(var(--number-edge-start) + var(--number-sink) + var(--number-edge-width)) 100%,
+    calc(var(--number-edge-start) + var(--number-sink)) 100%,
+    calc(var(--number-edge-start) + var(--number-sink)) var(--number-sink)
+  );
 }
 .number-step > svg {
-  transform: translate(0, 0);
-  transition: transform 100ms;
+  position: relative;
+  z-index: 3;
+  transform: translate(var(--number-sink), var(--number-sink));
 }
 .number-step:first-child {
-  border-right: 2px solid var(--surface-stroke);
+  --number-edge-start: calc(100% - var(--number-sink) - 2px);
   border-radius: 8px 0 0 8px;
 }
+.number-step:first-child::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 100%;
+  top: var(--number-sink);
+  bottom: 0;
+  width: var(--number-sink);
+  background: inherit;
+  pointer-events: none;
+}
 .number-step:last-child {
-  border-left: 2px solid var(--surface-stroke);
   border-radius: 0 8px 8px 0;
+  background-image: linear-gradient(
+    to right,
+    var(--number-well, var(--color-base-100)) var(--number-sink),
+    transparent var(--number-sink)
+  );
 }
 .number-step:hover:not(:disabled) {
-  background: var(--color-primary);
+  background-color: var(--color-primary);
 }
 .number-step:active:not(:disabled),
 .number-step:disabled {
   box-shadow: inset var(--field-depth) var(--field-depth) 0 var(--surface-depth);
-  border-color: var(--surface-depth);
-  border-width: 1px;
-}
-.number-step:active:not(:disabled) > svg,
-.number-step:disabled > svg {
-  transform: translate(var(--field-depth), var(--field-depth));
+  --number-sink: var(--field-depth);
 }
 .number-step:last-child:active:not(:disabled),
 .number-step:last-child:disabled {
@@ -78,7 +121,7 @@
   box-shadow: inset 0 var(--field-depth) 0 var(--surface-depth);
 }
 .number-step:active:not(:disabled) {
-  background: var(--color-primary);
+  background-color: var(--color-primary);
   color: var(--color-primary-content);
 }
 .number-step:focus-visible {
@@ -86,13 +129,15 @@
   outline-offset: -4px;
 }
 .number-control[data-disabled] {
+  --number-well: var(--color-base-200);
   border-color: #96a38d;
 }
 .number-control .number-value:disabled {
   box-shadow: inset var(--field-depth) var(--field-depth) 0 var(--surface-depth);
 }
 .number-step:disabled {
-  background: var(--color-base-200);
+  --number-edge-width: 1px;
+  background-color: var(--color-base-200);
   color: #84937b;
   cursor: not-allowed;
 }
