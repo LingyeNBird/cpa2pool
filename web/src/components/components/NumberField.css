@@ -48,10 +48,9 @@
   background: var(--color-base-200);
   color: var(--color-base-content);
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: inset var(--number-sink) var(--number-sink) 0 var(--surface-depth);
   transition:
     background-color 100ms,
-    box-shadow 100ms,
     color 100ms,
     --number-sink 100ms;
 }
@@ -98,23 +97,22 @@
 }
 .number-step:last-child {
   border-radius: 0 8px 8px 0;
+  /* Revealed input surface stays at full depth while the button edge moves across it. */
   background-image: linear-gradient(
-    to right,
-    var(--number-well, var(--color-base-100)) var(--number-sink),
-    transparent var(--number-sink)
+    to bottom,
+    var(--surface-depth) var(--field-depth),
+    var(--number-well, var(--color-base-100)) var(--field-depth)
   );
+  background-size: var(--number-sink) 100%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 var(--number-sink) 0 var(--surface-depth);
 }
 .number-step:hover:not(:disabled) {
   background-color: var(--color-primary);
 }
 .number-step:active:not(:disabled),
 .number-step:disabled {
-  box-shadow: inset var(--field-depth) var(--field-depth) 0 var(--surface-depth);
   --number-sink: var(--field-depth);
-}
-.number-step:last-child:active:not(:disabled),
-.number-step:last-child:disabled {
-  box-shadow: inset 0 var(--field-depth) 0 var(--surface-depth);
 }
 .number-control:has(.number-step:first-child:disabled) .number-value,
 .number-control:has(.number-step:first-child:active:not(:disabled)) .number-value {
