@@ -1,0 +1,8 @@
+.quota-item { border-top: 1px solid #dce5d8; padding-top: 22px; margin-top: 22px; }
+.quota-amounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.quota-amounts div { display: grid; gap: 8px; }
+.quota-amounts span { font-size: 0.78rem; color: #617058; }
+.quota-amounts strong { font-size: 1.08rem; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.quota-dates { display: grid; grid-template-columns: 85px 1fr; gap: 8px; font-size: 0.8rem; margin: 22px 0 0; }
+.quota-dates dt { color: #617058; }
+.quota-dates dd { margin: 0; }

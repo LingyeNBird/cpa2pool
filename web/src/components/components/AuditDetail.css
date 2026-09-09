@@ -1,0 +1,2 @@
+.audit-snapshots { display: grid; gap: 22px; margin-top: 24px; }
+.audit-snapshots pre { overflow-x: auto; font-size: 0.76rem; background: #eef2ec; padding: 14px; border-radius: 12px; }
