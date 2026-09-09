@@ -16,7 +16,6 @@ onMounted(() => dialog.value?.showModal());
   >
     <section class="modal-box panel">
       <header class="section-heading">
-        <h2>{{ title }}</h2>
         <button
           type="button"
           class="btn btn-ghost btn-square"
@@ -25,6 +24,7 @@ onMounted(() => dialog.value?.showModal());
         >
           <PhX :size="20" />
         </button>
+        <h2>{{ title }}</h2>
       </header>
       <slot />
     </section>

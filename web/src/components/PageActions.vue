@@ -1,0 +1,17 @@
+<script setup lang="ts">
+import { PhArrowClockwise, PhSignOut } from '@phosphor-icons/vue';
+import './PageActions.css';
+defineProps<{ busy: boolean }>();
+const emit = defineEmits<{ refresh: []; logout: [] }>();
+</script>
+
+<template>
+  <div class="page-actions" role="group" aria-label="页面操作">
+    <button class="btn btn-sm" :disabled="busy" @click="emit('refresh')">
+      <PhArrowClockwise :size="18" />刷新
+    </button>
+    <button class="btn btn-sm btn-ghost" @click="emit('logout')">
+      <PhSignOut :size="18" />退出
+    </button>
+  </div>
+</template>

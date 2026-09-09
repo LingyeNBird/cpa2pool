@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import {
-  PhArrowClockwise,
-  PhSignOut,
   PhUsers,
   PhSlidersHorizontal,
   PhReceipt,
@@ -13,6 +11,7 @@ import { authenticated, login, logout, act, failure, busy } from './api';
 import ParticipantsPage from './components/ParticipantsPage.vue';
 import PricesPage from './components/PricesPage.vue';
 import ReportsPage from './components/ReportsPage.vue';
+import PageActions from './components/PageActions.vue';
 import './App.css';
 const credential = ref('');
 const section = ref('participants');
@@ -35,18 +34,6 @@ async function signIn() {
       <div class="brand">
         <PhChartLine :size="27" weight="bold" />
         <h1>拼车额度</h1>
-      </div>
-      <div v-if="authenticated" class="header-actions">
-        <button
-          class="btn btn-ghost btn-square"
-          aria-label="刷新"
-          :disabled="busy"
-          @click="revision++"
-        >
-          <PhArrowClockwise :size="20" /></button
-        ><button class="btn btn-ghost btn-square" aria-label="退出" @click="logout">
-          <PhSignOut :size="20" />
-        </button>
       </div>
     </header>
     <div v-if="failure" class="alert alert-error error-bar" role="alert">
@@ -85,6 +72,7 @@ async function signIn() {
           <component :is="tab.icon" :size="19" />{{ tab.title }}
         </button>
       </nav>
+      <PageActions :busy="busy" @refresh="revision++" @logout="logout" />
       <ParticipantsPage v-if="section === 'participants'" :key="`p${revision}`" />
       <PricesPage v-else-if="section === 'prices'" :key="`c${revision}`" />
       <ReportsPage v-else :key="`r${revision}`" />
