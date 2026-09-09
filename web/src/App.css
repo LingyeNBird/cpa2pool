@@ -38,6 +38,9 @@
 :root {
   font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
   font-synthesis: none;
+  --surface-stroke: #53674d;
+  --surface-depth: #bac9b3;
+  --field-depth: 0px;
 }
 body {
   margin: 0;
@@ -151,15 +154,81 @@ h3 {
 .select,
 .textarea {
   width: 100%;
-  border: 1.5px solid #889b7f;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 10px;
   background: var(--color-base-100);
-  box-shadow: none;
+  box-shadow: inset var(--field-depth) var(--field-depth) 0 var(--surface-depth);
+  padding-inline: 12px;
+  transition:
+    border-color 120ms,
+    box-shadow 120ms,
+    background-color 120ms;
 }
 .input:focus,
 .select:focus,
 .textarea:focus {
-  outline: 2px solid #617c54;
-  outline-offset: 2px;
+  outline: none;
+  border-color: var(--color-base-content);
+  box-shadow:
+    inset 0 0 0 1px var(--color-base-content),
+    inset var(--field-depth) var(--field-depth) 0 var(--surface-depth);
+  background-color: #f3f8ef;
+}
+.panel .input,
+.panel .select,
+.panel .textarea {
+  --field-depth: 4px;
+}
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+  border-color: #96a38d;
+  background: var(--color-base-200);
+  color: #617058;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.toggle {
+  width: 48px;
+  height: 28px;
+  padding: 0;
+  display: inline-block;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 9px;
+  background: var(--color-base-200);
+  box-shadow: inset 2px 2px 0 var(--surface-depth);
+  transition: background-color 120ms;
+}
+.toggle::before {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 5px;
+  background: var(--color-base-100);
+  box-shadow: 1px 1px 0 var(--surface-depth);
+  transition: transform 140ms;
+}
+.toggle:checked {
+  background: var(--color-primary);
+}
+.toggle:checked::before {
+  background: var(--color-base-100);
+  transform: translateX(20px);
+}
+.toggle:focus-visible,
+.checkbox:focus-visible {
+  outline: 2px solid var(--color-base-content);
+  outline-offset: 3px;
+}
+.toggle:disabled {
+  opacity: 0.5;
+}
+.checkbox {
+  border: 2px solid var(--surface-stroke);
+  border-radius: 5px;
 }
 .field {
   display: flex;
@@ -217,9 +286,25 @@ h3 {
   white-space: nowrap;
 }
 .badge {
-  border: 1px solid #a8b89f;
+  min-height: 25px;
+  height: auto;
+  padding: 3px 8px;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 6px;
+  background: var(--color-base-200);
+  color: var(--color-base-content);
+  box-shadow: none;
   font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.2;
   white-space: nowrap;
+}
+.badge-success {
+  background: var(--color-success);
+}
+.badge-ghost {
+  border-color: #84937b;
+  color: #53644d;
 }
 .empty {
   padding: 54px 16px;
