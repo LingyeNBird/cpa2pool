@@ -146,3 +146,16 @@
   opacity: 0;
   scale: 0.99;
 }
+.calendar-time-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-inline: auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  line-height: 1;
+}
+.calendar-time-preview > svg {
+  flex-shrink: 0;
+}

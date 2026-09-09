@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, shallowRef, useId } from 'vue';
-import { VueDatePicker, type InputParsedDate, type ModelValue } from '@vuepic/vue-datepicker';
+import {
+  VueDatePicker,
+  type InputParsedDate,
+  type InternalModelValue,
+  type ModelValue,
+} from '@vuepic/vue-datepicker';
 import { format, isValid, parse } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { PhCalendarBlank } from '@phosphor-icons/vue';
+import { PhCalendarBlank, PhClock } from '@phosphor-icons/vue';
 import FieldLabel from './FieldLabel.vue';
 import '@vuepic/vue-datepicker/dist/main.css';
 import './DateTimeField.css';
@@ -14,6 +19,7 @@ const root = ref<HTMLElement>();
 const picker = ref<InstanceType<typeof VueDatePicker>>();
 const portal = shallowRef<HTMLElement>();
 const open = ref(false);
+const selectedTime = ref('');
 const inputFormat = 'yyyy-MM-dd HH:mm';
 onMounted(() => {
   // Keep the popup in the modal's top layer, outside its scrolling panel.
@@ -45,6 +51,9 @@ function validateInput(_event: Event | string, parsedDate: InputParsedDate) {
 function update(value: ModelValue) {
   model.value = typeof value === 'string' ? value : '';
   root.value?.querySelector('input')?.setCustomValidity('');
+}
+function updateTimePreview(value: InternalModelValue) {
+  selectedTime.value = value instanceof Date && isValid(value) ? format(value, 'HH:mm') : '';
 }
 </script>
 <template>
@@ -106,6 +115,7 @@ function update(value: ModelValue) {
       @closed="open = false"
       @text-input="validateInput"
       @update:model-value="update"
+      @internal-model-change="updateTimePreview"
     >
       <template #input-icon>
         <button
@@ -119,6 +129,12 @@ function update(value: ModelValue) {
         >
           <PhCalendarBlank :size="19" />
         </button>
+      </template>
+      <template #clock-icon>
+        <span class="calendar-time-preview">
+          <PhClock :size="19" />
+          <span v-if="selectedTime">{{ selectedTime }}</span>
+        </span>
       </template>
     </VueDatePicker>
   </div>
