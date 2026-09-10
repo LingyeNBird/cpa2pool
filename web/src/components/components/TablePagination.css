@@ -28,9 +28,11 @@
 .table-page-input.input:focus,
 .table-page-input.input:focus-visible {
   outline: none;
-  border-color: var(--surface-stroke);
-  background: var(--color-base-100);
-  box-shadow: 3px 3px 0 var(--surface-depth);
+  border-color: var(--color-base-content);
+  background: #f3f8ef;
+  box-shadow:
+    inset 0 0 0 1px var(--color-base-content),
+    3px 3px 0 var(--surface-depth);
 }
 .table-page-input::-webkit-inner-spin-button,
 .table-page-input::-webkit-outer-spin-button {
