@@ -23,7 +23,7 @@ defineProps<{
         :aria-pressed="model === option.value"
         @click="model = option.value"
       >
-        {{ option.label }}
+        <span>{{ option.label }}</span>
       </button>
     </div>
   </div>
