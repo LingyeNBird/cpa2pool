@@ -5,6 +5,10 @@
   align-items: end;
   margin-bottom: 26px;
 }
+.report-filter-raised .input,
+.report-filter-raised .select {
+  box-shadow: 3px 3px 0 var(--surface-depth);
+}
 .report-filters > .btn {
   grid-column: 1 / -1;
   justify-self: start;

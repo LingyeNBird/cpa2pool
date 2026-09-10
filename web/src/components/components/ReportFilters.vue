@@ -34,17 +34,28 @@ function apply() {
   <form class="report-filters" @submit.prevent="apply">
     <SelectField
       v-model="pid"
+      class="report-filter-raised"
       label="参与者"
       :options="[
         { value: '', label: '全部' },
         ...participants.map((p) => ({ value: p.id, label: p.name })),
       ]"
     />
-    <label v-if="mode === 'bills' || mode === 'stats'" class="field"
-      ><span>模型</span><input v-model="model" class="input" placeholder="全部"
-    /></label>
-    <DateTimeField v-if="mode !== 'periods'" v-model="from" label="开始时间" />
-    <DateTimeField v-if="mode !== 'periods'" v-model="to" label="结束时间" />
+    <label v-if="mode === 'bills' || mode === 'stats'" class="field report-filter-raised">
+      <span>模型</span><input v-model="model" class="input" placeholder="全部" />
+    </label>
+    <DateTimeField
+      v-if="mode !== 'periods'"
+      v-model="from"
+      class="report-filter-raised"
+      label="开始时间"
+    />
+    <DateTimeField
+      v-if="mode !== 'periods'"
+      v-model="to"
+      class="report-filter-raised"
+      label="结束时间"
+    />
     <button class="btn btn-primary">查询</button>
   </form>
 </template>
