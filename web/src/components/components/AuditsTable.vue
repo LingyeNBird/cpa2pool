@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import ReportTable from './ReportTable.vue';
 import { ref } from 'vue';
 import type { Audit } from '../../types';
 import { date } from '../../api';
 import AuditDetail from './AuditDetail.vue';
-defineProps<{ audits: Audit[]; names: Record<string, string> }>();
+defineProps<{ audits: Audit[]; names: Record<string, string>; pending?: boolean }>();
 const selected = ref<Audit | null>(null);
 const actions: Record<string, string> = {
   'participant.save': '保存参与者',
@@ -22,28 +23,27 @@ const actions: Record<string, string> = {
 };
 </script>
 <template>
-  <div v-if="!audits.length" class="empty">暂无调整记录</div>
-  <div v-else class="table-wrap table-list table-list-inset">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>时间</th>
-          <th>参与者</th>
-          <th>操作</th>
-          <th>备注</th>
-          <th>明细</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="a in audits" :key="a.id">
-          <td>{{ date(a.time) }}</td>
-          <td>{{ names[a.participant_id] || a.participant_id || '全局' }}</td>
-          <td>{{ actions[a.action] || a.action }}</td>
-          <td>{{ a.note || '无' }}</td>
-          <td><button class="btn btn-sm" @click="selected = a">查看</button></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <ReportTable
+    :items="audits"
+    :row-key="(a) => a.id"
+    :columns="5"
+    empty="暂无调整记录"
+    :pending="pending"
+  >
+    <template #header>
+      <th>时间</th>
+      <th>参与者</th>
+      <th>操作</th>
+      <th>备注</th>
+      <th>明细</th>
+    </template>
+    <template #row="{ item: a }">
+      <td>{{ date(a.time) }}</td>
+      <td>{{ names[a.participant_id] || a.participant_id || '全局' }}</td>
+      <td>{{ actions[a.action] || a.action }}</td>
+      <td>{{ a.note || '无' }}</td>
+      <td><button class="btn btn-sm" @click="selected = a">查看</button></td>
+    </template>
+  </ReportTable>
   <AuditDetail v-if="selected" :audit="selected" @close="selected = null" />
 </template>

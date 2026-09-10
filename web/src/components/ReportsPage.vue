@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import AnimatedValue from './components/AnimatedValue.vue';
-import { computed, onMounted, ref } from 'vue';
+import ReportTable from './components/ReportTable.vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { Participant, Bill, Period, Audit, Stat, Page, Quota } from '../types';
-import { api, act, money, busy } from '../api';
+import { api, act, money } from '../api';
 import ReportFilters from './components/ReportFilters.vue';
 import SummaryStats from './components/SummaryStats.vue';
 import BillsTable from './components/BillsTable.vue';
@@ -23,6 +24,13 @@ const group = ref('model');
 const offset = ref(0);
 const count = ref(0);
 const loading = ref(true);
+const displayedTab = ref('bills');
+const displayedGroup = ref('model');
+const displayedOffset = ref(0);
+let generation = 0;
+onBeforeUnmount(() => {
+  generation++;
+});
 let filters = new URLSearchParams();
 const tabs = [
   { id: 'bills', label: '请求账单' },
@@ -31,28 +39,51 @@ const tabs = [
   { id: 'audits', label: '调整记录' },
 ];
 async function load() {
+  const request = ++generation;
+  const requestedTab = tab.value;
+  const requestedGroup = group.value;
+  const requestedOffset = offset.value;
+  const filterSnapshot = new URLSearchParams(filters);
   loading.value = true;
   try {
-    const q = new URLSearchParams(filters);
+    const q = new URLSearchParams(filterSnapshot);
     q.set('limit', '20');
-    q.set('offset', String(offset.value));
-    total.value = (await api<Stat[]>(`stats?${filters}`))[0];
-    if (tab.value === 'bills') {
+    q.set('offset', String(requestedOffset));
+    const summary = (await api<Stat[]>(`stats?${filterSnapshot}`))[0];
+    if (request !== generation) return;
+    if (requestedTab === 'bills') {
       const page = await api<Page<Bill>>(`bills?${q}`);
+      if (request !== generation) return;
       bills.value = page.items;
       count.value = page.total;
-    } else if (tab.value === 'audits') {
+    } else if (requestedTab === 'audits') {
       const page = await api<Page<Audit>>(`audits?${q}`);
+      if (request !== generation) return;
       audits.value = page.items;
       count.value = page.total;
-    } else if (tab.value === 'periods') {
-      history.value = await api<Period[]>(`periods?${q}`);
+    } else if (requestedTab === 'periods') {
+      const rows = await api<Period[]>(`periods?${q}`);
+      if (request !== generation) return;
+      history.value = rows;
     } else {
-      q.set('group', group.value);
-      stats.value = await api<Stat[]>(`stats?${q}`);
+      q.set('group', requestedGroup);
+      const rows = await api<Stat[]>(`stats?${q}`);
+      if (request !== generation) return;
+      stats.value = rows;
+    }
+    total.value = summary;
+    displayedTab.value = requestedTab;
+    displayedGroup.value = requestedGroup;
+    displayedOffset.value = requestedOffset;
+  } catch (error) {
+    if (request === generation) {
+      tab.value = displayedTab.value;
+      group.value = displayedGroup.value;
+      offset.value = displayedOffset.value;
+      throw error;
     }
   } finally {
-    loading.value = false;
+    if (request === generation) loading.value = false;
   }
 }
 async function apply(q: URLSearchParams) {
@@ -71,7 +102,7 @@ async function switchTab(value: string) {
   await act(load);
 }
 async function paginate(delta: number) {
-  offset.value += delta;
+  offset.value = displayedOffset.value + delta;
   await act(load);
 }
 onMounted(() =>
@@ -103,57 +134,71 @@ onMounted(() =>
           {{ t.label }}
         </button>
       </div>
-      <div v-if="loading" class="empty">读取中</div>
-      <template v-else
-        ><BillsTable v-if="tab === 'bills'" :bills="bills" :names="names" /><AuditsTable
-          v-else-if="tab === 'audits'"
-          :audits="audits"
-          :names="names" /><PeriodsTable
-          v-else-if="tab === 'periods'"
-          :periods="history"
-          :names="names"
-          :quota-names="quotaNames" /><template v-else>
-          <SelectField
-            v-model="group"
-            class="stats-group"
-            label="分组"
-            :options="[
-              { value: 'model', label: '按模型' },
-              { value: 'participant', label: '按参与者' },
-              { value: 'day', label: '按日期' },
-            ]"
-            @change="act(load)" />
-          <div v-if="!stats.length" class="empty">暂无消费</div>
-          <div v-else class="table-wrap table-list table-list-inset">
-            <table class="table">
-              <thead>
-                <tr>
-                  <th>分组</th>
-                  <th>请求数</th>
-                  <th>输入 Token</th>
-                  <th>输出 Token</th>
-                  <th>缓存读取</th>
-                  <th>消费</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="s in stats" :key="s.group">
-                  <td>{{ group === 'participant' ? names[s.group] || s.group : s.group }}</td>
-                  <td><AnimatedValue :value="s.requests" /></td>
-                  <td><AnimatedValue :value="s.input" /></td>
-                  <td><AnimatedValue :value="s.output" /></td>
-                  <td><AnimatedValue :value="s.cache_read" /></td>
-                  <td class="amount"><AnimatedValue :value="money(s.cost)" /></td>
-                </tr>
-              </tbody>
-            </table></div></template
+      <BillsTable
+        v-if="displayedTab === 'bills'"
+        :bills="bills"
+        :names="names"
+        :pending="loading"
+      /><AuditsTable
+        v-else-if="displayedTab === 'audits'"
+        :audits="audits"
+        :names="names"
+        :pending="loading"
+      /><PeriodsTable
+        v-else-if="displayedTab === 'periods'"
+        :periods="history"
+        :names="names"
+        :pending="loading"
+        :quota-names="quotaNames"
+      /><template v-else>
+        <SelectField
+          v-model="group"
+          class="stats-group"
+          label="分组"
+          :options="[
+            { value: 'model', label: '按模型' },
+            { value: 'participant', label: '按参与者' },
+            { value: 'day', label: '按日期' },
+          ]"
+          @change="act(load)" />
+        <ReportTable
+          :items="stats"
+          :row-key="(s) => `${displayedGroup}:${s.group}`"
+          :columns="6"
+          empty="暂无消费"
+          :pending="loading"
+        >
+          <template #header>
+            <th>分组</th>
+            <th>请求数</th>
+            <th>输入 Token</th>
+            <th>输出 Token</th>
+            <th>缓存读取</th>
+            <th>消费</th>
+          </template>
+          <template #row="{ item: s }">
+            <td>{{ displayedGroup === 'participant' ? names[s.group] || s.group : s.group }}</td>
+            <td><AnimatedValue :value="s.requests" /></td>
+            <td><AnimatedValue :value="s.input" /></td>
+            <td><AnimatedValue :value="s.output" /></td>
+            <td><AnimatedValue :value="s.cache_read" /></td>
+            <td class="amount"><AnimatedValue :value="money(s.cost)" /></td>
+          </template> </ReportTable
       ></template>
-      <div v-if="['bills', 'audits'].includes(tab)" class="pagination">
+      <div v-if="['bills', 'audits'].includes(displayedTab)" class="pagination">
         <span><AnimatedValue :value="count" /> 条</span
-        ><button class="btn btn-sm" :disabled="offset === 0 || busy" @click="paginate(-20)">
+        ><button
+          class="btn btn-sm"
+          :disabled="displayedOffset === 0 || loading"
+          @click="paginate(-20)"
+        >
           上一页</button
-        ><span><AnimatedValue :value="Math.floor(offset / 20) + 1" /></span
-        ><button class="btn btn-sm" :disabled="offset + 20 >= count || busy" @click="paginate(20)">
+        ><span><AnimatedValue :value="Math.floor(displayedOffset / 20) + 1" /></span
+        ><button
+          class="btn btn-sm"
+          :disabled="displayedOffset + 20 >= count || loading"
+          @click="paginate(20)"
+        >
           下一页
         </button>
       </div>
