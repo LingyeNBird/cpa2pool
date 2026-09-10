@@ -209,7 +209,7 @@ h3 {
   border: 2px solid var(--surface-stroke);
   border-radius: 5px;
   background: var(--color-base-100);
-  box-shadow: 1px 1px 0 var(--surface-depth);
+  box-shadow: 2px 2px 0 var(--surface-depth);
   transition: transform 140ms;
 }
 .toggle:checked {
