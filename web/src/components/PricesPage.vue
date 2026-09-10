@@ -71,9 +71,14 @@ onMounted(() => act(load));
           <thead>
             <tr>
               <th>模型</th>
-              <th><FieldLabel text="输入" tip="USD / 百万 Token" /></th>
-              <th>输出</th>
-              <th>缓存读取</th>
+              <th>
+                <FieldLabel
+                  text="输入 / 1K"
+                  tip="Token 模型：USD / 百万 Token；图片模型：USD / 张。"
+                />
+              </th>
+              <th>输出 / 2K</th>
+              <th>缓存读取 / 4K</th>
               <th>缓存写入</th>
               <th>倍率</th>
               <th>操作</th>
@@ -83,19 +88,38 @@ onMounted(() => act(load));
             <tr v-for="p in prices" :key="p.model">
               <td>
                 <strong>{{ p.model }}</strong>
+                <span v-if="p.billing_mode === 'image'" class="badge">图片按次</span>
               </td>
-              <td class="amount"><AnimatedValue :value="money(p.input)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.output)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.cache_read)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.cache_write)" /></td>
+              <template v-if="p.billing_mode === 'image'">
+                <td class="amount"><AnimatedValue :value="money(p.image_price_1k)" /></td>
+                <td class="amount"><AnimatedValue :value="money(p.image_price_2k)" /></td>
+                <td class="amount"><AnimatedValue :value="money(p.image_price_4k)" /></td>
+                <td class="amount">—</td>
+              </template>
+              <template v-else>
+                <td class="amount"><AnimatedValue :value="money(p.input)" /></td>
+                <td class="amount"><AnimatedValue :value="money(p.output)" /></td>
+                <td class="amount"><AnimatedValue :value="money(p.cache_read)" /></td>
+                <td class="amount"><AnimatedValue :value="money(p.cache_write)" /></td>
+              </template>
               <td>
                 <div class="row-actions">
-                  <span v-if="p.priority_enabled" class="badge"
+                  <span v-if="p.billing_mode === 'image'" class="badge">按张结算</span
+                  ><span v-else-if="p.priority_enabled" class="badge"
                     >FAST ×<AnimatedValue :value="p.priority_multiplier" /></span
-                  ><span v-if="p.long_enabled" class="badge">长上下文</span
+                  ><span v-if="p.billing_mode !== 'image' && p.long_enabled" class="badge"
+                    >长上下文</span
                   ><span v-if="p.model_enabled" class="badge"
                     >模型 ×<AnimatedValue :value="p.model_multiplier" /></span
-                  ><span v-if="!p.priority_enabled && !p.long_enabled && !p.model_enabled">无</span>
+                  ><span
+                    v-if="
+                      p.billing_mode !== 'image' &&
+                      !p.priority_enabled &&
+                      !p.long_enabled &&
+                      !p.model_enabled
+                    "
+                    >无</span
+                  >
                 </div>
               </td>
               <td>

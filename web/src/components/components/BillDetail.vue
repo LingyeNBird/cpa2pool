@@ -33,36 +33,55 @@ const factors: Record<string, string> = {
         <thead>
           <tr>
             <th>项目</th>
-            <th>Token</th>
-            <th>单价 / 百万</th>
+            <th>{{ bill.charge.price.billing_mode === 'image' ? '数量' : 'Token' }}</th>
+            <th>{{ bill.charge.price.billing_mode === 'image' ? '单价 / 张' : '单价 / 百万' }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>输入</td>
-            <td><AnimatedValue :value="bill.usage.input" /></td>
-            <td><AnimatedValue :value="money(bill.charge.price.input)" /></td>
+          <tr v-if="bill.charge.price.billing_mode === 'image'">
+            <td>图片（{{ bill.usage.image_size }}）</td>
+            <td><AnimatedValue :value="bill.usage.images" /></td>
+            <td>
+              <AnimatedValue
+                :value="
+                  money(
+                    bill.usage.image_size === '1K'
+                      ? bill.charge.price.image_price_1k
+                      : bill.usage.image_size === '4K'
+                        ? bill.charge.price.image_price_4k
+                        : bill.charge.price.image_price_2k,
+                  )
+                "
+              />
+            </td>
           </tr>
-          <tr>
-            <td>输出</td>
-            <td><AnimatedValue :value="bill.usage.output" /></td>
-            <td><AnimatedValue :value="money(bill.charge.price.output)" /></td>
-          </tr>
-          <tr>
-            <td>缓存读取</td>
-            <td><AnimatedValue :value="bill.usage.cache_read" /></td>
-            <td><AnimatedValue :value="money(bill.charge.price.cache_read)" /></td>
-          </tr>
-          <tr>
-            <td>缓存写入</td>
-            <td><AnimatedValue :value="bill.usage.cache_write" /></td>
-            <td><AnimatedValue :value="money(bill.charge.price.cache_write)" /></td>
-          </tr>
-          <tr>
-            <td>推理（已含输出）</td>
-            <td><AnimatedValue :value="bill.usage.reasoning" /></td>
-            <td>不重复计费</td>
-          </tr>
+          <template v-else>
+            <tr>
+              <td>输入</td>
+              <td><AnimatedValue :value="bill.usage.input" /></td>
+              <td><AnimatedValue :value="money(bill.charge.price.input)" /></td>
+            </tr>
+            <tr>
+              <td>输出</td>
+              <td><AnimatedValue :value="bill.usage.output" /></td>
+              <td><AnimatedValue :value="money(bill.charge.price.output)" /></td>
+            </tr>
+            <tr>
+              <td>缓存读取</td>
+              <td><AnimatedValue :value="bill.usage.cache_read" /></td>
+              <td><AnimatedValue :value="money(bill.charge.price.cache_read)" /></td>
+            </tr>
+            <tr>
+              <td>缓存写入</td>
+              <td><AnimatedValue :value="bill.usage.cache_write" /></td>
+              <td><AnimatedValue :value="money(bill.charge.price.cache_write)" /></td>
+            </tr>
+            <tr>
+              <td>推理（已含输出）</td>
+              <td><AnimatedValue :value="bill.usage.reasoning" /></td>
+              <td>不重复计费</td>
+            </tr>
+          </template>
         </tbody>
       </table>
     </div>
@@ -74,8 +93,10 @@ const factors: Record<string, string> = {
         ><dt>{{ factors[f.name] }}</dt>
         <dd>输入 ×<AnimatedValue :value="f.input" /> · 输出 ×<AnimatedValue :value="f.output" /></dd
       ></template>
-      <dt>组合方式</dt>
-      <dd>{{ bill.charge.price.combination === 'max' ? '取最大值' : '相乘' }}</dd>
+      <template v-if="bill.charge.price.billing_mode !== 'image'">
+        <dt>组合方式</dt>
+        <dd>{{ bill.charge.price.combination === 'max' ? '取最大值' : '相乘' }}</dd>
+      </template>
       <dt>最终扣费</dt>
       <dd class="amount"><AnimatedValue :value="money(bill.charge.final)" /></dd>
       <dt>价格版本时间</dt>

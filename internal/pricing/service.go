@@ -16,12 +16,23 @@ func (s Service) List() ([]domain.Price, error) {
 func Get(q store.Query, model string) (domain.Price, error) {
 	return store.One[domain.Price](q, "SELECT body FROM prices WHERE model=?", model)
 }
+func normalize(p domain.Price) domain.Price {
+	if p.BillingMode == "" {
+		p.BillingMode = "token"
+	}
+	return p
+}
+
 func validate(p domain.Price) error {
 	if p.Model == "" {
 		return errors.New("请输入模型名称")
 	}
-	if p.Input < 0 || p.Output < 0 || p.CacheRead < 0 || p.CacheWrite < 0 {
+	if p.Input < 0 || p.Output < 0 || p.CacheRead < 0 || p.CacheWrite < 0 ||
+		p.ImagePrice1K < 0 || p.ImagePrice2K < 0 || p.ImagePrice4K < 0 {
 		return errors.New("单价不能为负")
+	}
+	if p.BillingMode != "token" && p.BillingMode != "image" {
+		return errors.New("计费模式应为 token 或 image")
 	}
 	if p.Combination != "multiply" && p.Combination != "max" {
 		return errors.New("倍率组合应为 multiply 或 max")
@@ -33,6 +44,7 @@ func validate(p domain.Price) error {
 }
 
 func (s Service) Save(p domain.Price) (domain.Price, error) {
+	p = normalize(p)
 	if err := validate(p); err != nil {
 		return p, err
 	}
@@ -52,29 +64,43 @@ func (s Service) Save(p domain.Price) (domain.Price, error) {
 }
 func (s Service) SyncDefaults(defaults []domain.Price) ([]domain.Price, error) {
 	now := domain.Now()
-	added := make([]domain.Price, 0, len(defaults))
+	changed := make([]domain.Price, 0, len(defaults))
 	err := s.Store.Tx(func(tx *sql.Tx) error {
 		for _, p := range defaults {
+			p = normalize(p)
 			if err := validate(p); err != nil {
 				return err
 			}
 			p.UpdatedAt = now
-			result, err := tx.Exec("INSERT OR IGNORE INTO prices VALUES(?,?)", p.Model, store.JSON(p))
-			if err != nil {
+			old, err := Get(tx, p.Model)
+			if err == nil {
+				if p.BillingMode != "image" || old.BillingMode != "" ||
+					old.ImagePrice1K != 0 || old.ImagePrice2K != 0 || old.ImagePrice4K != 0 {
+					continue
+				}
+				old.BillingMode = "image"
+				old.ImagePrice1K = p.ImagePrice1K
+				old.ImagePrice2K = p.ImagePrice2K
+				old.ImagePrice4K = p.ImagePrice4K
+				old.UpdatedAt = now
+				if _, err = tx.Exec("UPDATE prices SET body=? WHERE model=?", store.JSON(old), old.Model); err != nil {
+					return err
+				}
+				changed = append(changed, old)
+				continue
+			}
+			if err != sql.ErrNoRows {
 				return err
 			}
-			count, err := result.RowsAffected()
-			if err != nil {
+			if _, err = tx.Exec("INSERT INTO prices VALUES(?,?)", p.Model, store.JSON(p)); err != nil {
 				return err
 			}
-			if count > 0 {
-				added = append(added, p)
-			}
+			changed = append(changed, p)
 		}
-		if len(added) == 0 {
+		if len(changed) == 0 {
 			return nil
 		}
-		return store.Audit(tx, "", "", "price.sync_defaults", "", nil, added)
+		return store.Audit(tx, "", "", "price.sync_defaults", "", nil, changed)
 	})
 	if err != nil {
 		return nil, err
@@ -128,4 +154,27 @@ func Calculate(p domain.Price, u domain.Usage, tier string) domain.Charge {
 	input := tokenCost(u.Input, p.Input).Add(tokenCost(u.CacheRead, p.CacheRead)).Add(tokenCost(u.CacheWrite, p.CacheWrite))
 	output := tokenCost(u.Output, p.Output)
 	return domain.Charge{Base: domain.Money(input.Add(output).Round(0).IntPart()), Final: domain.Money(input.Mul(im).Add(output.Mul(om)).Round(0).IntPart()), Factors: factors, Price: p}
+}
+
+func CalculateImage(p domain.Price, count int64, size string) domain.Charge {
+	unit := p.ImagePrice2K
+	switch size {
+	case "1K":
+		unit = p.ImagePrice1K
+	case "4K":
+		unit = p.ImagePrice4K
+	}
+	base := decimal.NewFromInt(int64(unit)).Mul(decimal.NewFromInt(count))
+	final := base
+	factors := []domain.Factor{}
+	if p.ModelEnabled {
+		final = final.Mul(p.ModelMultiplier)
+		factors = append(factors, domain.Factor{Name: "model", Input: p.ModelMultiplier, Output: p.ModelMultiplier})
+	}
+	return domain.Charge{
+		Base:    domain.Money(base.Round(0).IntPart()),
+		Final:   domain.Money(final.Round(0).IntPart()),
+		Factors: factors,
+		Price:   p,
+	}
 }

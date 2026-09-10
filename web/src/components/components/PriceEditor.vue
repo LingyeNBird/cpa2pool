@@ -10,25 +10,37 @@ import SelectField from './SelectField.vue';
 import { loadModelCatalog, type ModelCatalogItem } from '../../modelCatalog';
 const props = defineProps<{ price: Price | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
-const draft = reactive<Price>({
-  ...(props.price || {
-    model: '',
-    input: '0',
-    output: '0',
-    cache_read: '0',
-    cache_write: '0',
-    priority_enabled: false,
-    priority_multiplier: '2',
-    long_enabled: false,
-    long_threshold: 200000,
-    long_input_multiplier: '2',
-    long_output_multiplier: '2',
-    model_enabled: false,
-    model_multiplier: '1',
-    combination: 'multiply',
-    updated_at: '',
-  }),
-});
+const draft = reactive<Price>(
+  props.price
+    ? {
+        ...props.price,
+        billing_mode: props.price.billing_mode || 'token',
+        image_price_1k: props.price.image_price_1k || '0',
+        image_price_2k: props.price.image_price_2k || '0',
+        image_price_4k: props.price.image_price_4k || '0',
+      }
+    : {
+        model: '',
+        billing_mode: 'token',
+        image_price_1k: '0',
+        image_price_2k: '0',
+        image_price_4k: '0',
+        input: '0',
+        output: '0',
+        cache_read: '0',
+        cache_write: '0',
+        priority_enabled: false,
+        priority_multiplier: '2',
+        long_enabled: false,
+        long_threshold: 200000,
+        long_input_multiplier: '2',
+        long_output_multiplier: '2',
+        model_enabled: false,
+        model_multiplier: '1',
+        combination: 'multiply',
+        updated_at: '',
+      },
+);
 const error = ref('');
 const catalog = ref<ModelCatalogItem[]>([]);
 const loadingCatalog = ref(!props.price);
@@ -108,56 +120,91 @@ const rates = [
           @change="applyCatalogPrice"
         />
         <div v-if="catalogError && !price" class="alert full-width">{{ catalogError }}</div>
-        <NumberField
-          v-for="rate in rates"
-          :key="rate.key"
-          v-model="draft[rate.key]"
-          :label="`${rate.label}单价`"
-          tip="USD / 百万 Token。缓存读取与普通输入分开计算，推理 Token 不重复加价。"
-          min="0"
-          required
+        <SelectField
+          v-model="draft.billing_mode"
+          class="full-width"
+          label="计费模式"
+          tip="图片按次根据生成张数和 1K、2K、4K 档位计费。"
+          :options="[
+            { value: 'token', label: 'Token' },
+            { value: 'image', label: '图片按次' },
+          ]"
         />
-        <div class="full-width"><hr class="divider-line" /></div>
-        <label class="check-field"
-          ><input
-            v-model="draft.priority_enabled"
-            class="toggle toggle-primary"
-            type="checkbox"
-          />FAST / priority</label
-        >
-        <NumberField
-          v-model="draft.priority_multiplier"
-          label="倍率"
-          min="0.000001"
-          :disabled="!draft.priority_enabled"
-        />
-        <label class="check-field"
-          ><input
-            v-model="draft.long_enabled"
-            class="toggle toggle-primary"
-            type="checkbox"
-          />长上下文</label
-        >
-        <NumberField
-          v-model.number="draft.long_threshold"
-          label="Token 阈值"
-          tip="总输入（含缓存）超过阈值时，整笔请求采用长上下文倍率。"
-          min="0"
-          step="1"
-          :disabled="!draft.long_enabled"
-        />
-        <NumberField
-          v-model="draft.long_input_multiplier"
-          label="长上下文输入倍率"
-          min="0.000001"
-          :disabled="!draft.long_enabled"
-        />
-        <NumberField
-          v-model="draft.long_output_multiplier"
-          label="长上下文输出倍率"
-          min="0.000001"
-          :disabled="!draft.long_enabled"
-        />
+        <template v-if="draft.billing_mode === 'image'">
+          <NumberField
+            v-model="draft.image_price_1k"
+            label="1K 每张价格"
+            tip="USD / 张。默认采用 Sub2API 图片计费费率。"
+            min="0"
+            required
+          />
+          <NumberField
+            v-model="draft.image_price_2k"
+            label="2K 每张价格"
+            tip="USD / 张。"
+            min="0"
+            required
+          />
+          <NumberField
+            v-model="draft.image_price_4k"
+            label="4K 每张价格"
+            tip="USD / 张。"
+            min="0"
+            required
+          />
+        </template>
+        <template v-else>
+          <NumberField
+            v-for="rate in rates"
+            :key="rate.key"
+            v-model="draft[rate.key]"
+            :label="`${rate.label}单价`"
+            tip="USD / 百万 Token。缓存读取与普通输入分开计算，推理 Token 不重复加价。"
+            min="0"
+            required
+          />
+          <div class="full-width"><hr class="divider-line" /></div>
+          <label class="check-field"
+            ><input
+              v-model="draft.priority_enabled"
+              class="toggle toggle-primary"
+              type="checkbox"
+            />FAST / priority</label
+          >
+          <NumberField
+            v-model="draft.priority_multiplier"
+            label="倍率"
+            min="0.000001"
+            :disabled="!draft.priority_enabled"
+          />
+          <label class="check-field"
+            ><input
+              v-model="draft.long_enabled"
+              class="toggle toggle-primary"
+              type="checkbox"
+            />长上下文</label
+          >
+          <NumberField
+            v-model.number="draft.long_threshold"
+            label="Token 阈值"
+            tip="总输入（含缓存）超过阈值时，整笔请求采用长上下文倍率。"
+            min="0"
+            step="1"
+            :disabled="!draft.long_enabled"
+          />
+          <NumberField
+            v-model="draft.long_input_multiplier"
+            label="长上下文输入倍率"
+            min="0.000001"
+            :disabled="!draft.long_enabled"
+          />
+          <NumberField
+            v-model="draft.long_output_multiplier"
+            label="长上下文输出倍率"
+            min="0.000001"
+            :disabled="!draft.long_enabled"
+          />
+        </template>
         <label class="check-field"
           ><input
             v-model="draft.model_enabled"
@@ -172,6 +219,7 @@ const rates = [
           :disabled="!draft.model_enabled"
         />
         <BinaryChoiceField
+          v-if="draft.billing_mode !== 'image'"
           v-model="draft.combination"
           class="full-width"
           label="组合方式"

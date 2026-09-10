@@ -22,6 +22,9 @@ type Pending struct {
 	Prices         map[string]domain.Price
 	Meter          Meter
 	Charged        bool
+	Image          bool
+	ImageSize      string
+	ImageCount     int64
 }
 type Service struct {
 	Store   *store.Store
@@ -36,6 +39,13 @@ type Denial struct {
 	Reason string
 }
 
+func normalizePriceMode(price domain.Price) string {
+	if price.BillingMode == "" {
+		return "token"
+	}
+	return price.BillingMode
+}
+
 func (d *Denial) Error() string { return d.Reason }
 func (s *Service) Before(id, scope, model string, body []byte) error {
 	s.mu.Lock()
@@ -44,6 +54,10 @@ func (s *Service) Before(id, scope, model string, body []byte) error {
 		return nil
 	}
 	requested, effort, tier := RequestPolicy(body, model)
+	image, imageSize, imageCount, imageModel := ImagePolicy(body, requested)
+	if image {
+		requested = imageModel
+	}
 	var p domain.Participant
 	err := s.Store.Tx(func(tx *sql.Tx) error {
 		var e error
@@ -80,7 +94,10 @@ func (s *Service) Before(id, scope, model string, body []byte) error {
 	for _, price := range prices {
 		catalog[price.Model] = price
 	}
-	s.pending[id] = &Pending{ParticipantID: p.ID, RequestedModel: requested, Model: requested, Effort: effort, Tier: tier, Prices: catalog}
+	s.pending[id] = &Pending{
+		ParticipantID: p.ID, RequestedModel: requested, Model: requested, Effort: effort, Tier: tier,
+		Prices: catalog, Image: image, ImageSize: imageSize, ImageCount: imageCount,
+	}
 	return nil
 }
 func (s *Service) After(id, model string) error {
@@ -90,9 +107,16 @@ func (s *Service) After(id, model string) error {
 	if p == nil {
 		return &Denial{403, "request_not_admitted"}
 	}
-	model, _, _ = RequestPolicy(nil, model)
+	if p.Image {
+		model = p.Model
+	} else {
+		model, _, _ = RequestPolicy(nil, model)
+	}
 	if _, ok := p.Prices[model]; !ok {
 		return &Denial{403, "model_price_missing:" + model}
+	}
+	if p.Image && normalizePriceMode(p.Prices[model]) != "image" {
+		return &Denial{403, "image_price_missing:" + model}
 	}
 	p.Model = model
 	return nil
@@ -104,6 +128,15 @@ func (s *Service) Response(id string, body []byte, stream bool) error {
 	if p == nil || p.Charged {
 		return nil
 	}
+	if p.Image {
+		if stream {
+			return nil
+		}
+		if count := ImageResponseCount(body); count > 0 {
+			p.ImageCount = count
+		}
+		return s.charge(id, p)
+	}
 	if stream {
 		p.Meter.Stream(body)
 		return nil
@@ -111,7 +144,7 @@ func (s *Service) Response(id string, body []byte, stream bool) error {
 	p.Meter.JSON(body)
 	return s.charge(id, p)
 }
-func (s *Service) Complete(id string) error {
+func (s *Service) Complete(id string, succeeded bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	p := s.pending[id]
@@ -119,6 +152,12 @@ func (s *Service) Complete(id string) error {
 		return nil
 	}
 	defer delete(s.pending, id)
+	if p.Image {
+		if !succeeded || p.Charged {
+			return nil
+		}
+		return s.charge(id, p)
+	}
 	p.Meter.Flush()
 	if !p.Meter.Seen || p.Charged {
 		return nil
@@ -126,7 +165,7 @@ func (s *Service) Complete(id string) error {
 	return s.charge(id, p)
 }
 func (s *Service) charge(id string, p *Pending) error {
-	if !p.Meter.Seen {
+	if !p.Image && !p.Meter.Seen {
 		return errors.New("上游未返回 Token 用量，无法计费")
 	}
 	model := p.Model
@@ -141,7 +180,14 @@ func (s *Service) charge(id string, p *Pending) error {
 	if p.Meter.Tier != "" {
 		tier = p.Meter.Tier
 	}
-	bill := domain.Bill{ID: domain.ID(), RequestID: id, ParticipantID: p.ParticipantID, Model: model, RequestedModel: p.RequestedModel, Effort: p.Effort, ServiceTier: tier, Time: domain.Now(), Usage: p.Meter.Usage, Charge: pricing.Calculate(price, p.Meter.Usage, tier)}
+	usage := p.Meter.Usage
+	charge := pricing.Calculate(price, usage, tier)
+	if p.Image {
+		usage.Images = p.ImageCount
+		usage.ImageSize = p.ImageSize
+		charge = pricing.CalculateImage(price, p.ImageCount, p.ImageSize)
+	}
+	bill := domain.Bill{ID: domain.ID(), RequestID: id, ParticipantID: p.ParticipantID, Model: model, RequestedModel: p.RequestedModel, Effort: p.Effort, ServiceTier: tier, Time: domain.Now(), Usage: usage, Charge: charge}
 	err := s.Store.Tx(func(tx *sql.Tx) error {
 		result, e := tx.Exec("INSERT INTO bills VALUES(?,?,?,?,?,?,?) ON CONFLICT(request_id) DO NOTHING", bill.ID, id, bill.ParticipantID, model, bill.Time.Format("2006-01-02T15:04:05.000000000Z"), int64(bill.Charge.Final), store.JSON(bill))
 		if e != nil {

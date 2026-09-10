@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cpa2pool/internal/domain"
 	"encoding/json"
+	"strconv"
 	"strings"
 )
 
@@ -111,6 +112,77 @@ func (m *Meter) Flush() {
 	}
 	m.buffer = nil
 }
+func imageSizeTier(value string) string {
+	value = strings.ToUpper(strings.TrimSpace(value))
+	switch value {
+	case "1K", "2K", "4K":
+		return value
+	}
+	parts := strings.Split(value, "X")
+	if len(parts) == 2 {
+		width, widthErr := strconv.Atoi(parts[0])
+		height, heightErr := strconv.Atoi(parts[1])
+		if widthErr == nil && heightErr == nil {
+			edge := max(width, height)
+			if edge <= 1024 {
+				return "1K"
+			}
+			if edge <= 2048 {
+				return "2K"
+			}
+			return "4K"
+		}
+	}
+	return "2K"
+}
+
+func ImagePolicy(body []byte, model string) (bool, string, int64, string) {
+	var root map[string]any
+	_ = json.Unmarshal(body, &root)
+	normalized := strings.ToLower(strings.TrimSpace(model))
+	image := strings.HasPrefix(normalized, "gpt-image-") ||
+		strings.HasPrefix(normalized, "grok-imagine-image") ||
+		strings.HasPrefix(normalized, "grok-imagine-edit") ||
+		strings.HasPrefix(normalized, "gemini-") && strings.Contains(normalized, "-image")
+	size := str(root, "size")
+	if config := object(object(root["generationConfig"])["imageConfig"]); config != nil {
+		if value := str(config, "imageSize"); value != "" {
+			size = value
+		}
+	}
+	if tools, ok := root["tools"].([]any); ok {
+		for _, raw := range tools {
+			tool := object(raw)
+			if str(tool, "type") != "image_generation" {
+				continue
+			}
+			image = true
+			if value := str(tool, "size"); value != "" {
+				size = value
+			}
+			if value := str(tool, "model"); value != "" {
+				model = value
+			}
+		}
+	}
+	count := number(root, "n")
+	if count <= 0 {
+		count = 1
+	}
+	return image, imageSizeTier(size), count, model
+}
+
+func ImageResponseCount(body []byte) int64 {
+	var root map[string]any
+	if json.Unmarshal(body, &root) != nil {
+		return 0
+	}
+	if data, ok := root["data"].([]any); ok {
+		return int64(len(data))
+	}
+	return 0
+}
+
 func RequestPolicy(body []byte, model string) (string, string, string) {
 	var root map[string]any
 	_ = json.Unmarshal(body, &root)

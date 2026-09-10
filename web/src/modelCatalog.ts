@@ -31,6 +31,8 @@ interface Sub2APIPrice {
   long_context_input_token_threshold?: number;
   long_context_input_cost_multiplier?: number;
   long_context_output_cost_multiplier?: number;
+  output_cost_per_image?: number;
+  mode?: string;
 }
 export interface ModelCatalogItem {
   id: string;
@@ -163,6 +165,43 @@ function priceFromSub2API(id: string, value: Sub2APIPrice): Price {
     longOutputMultiplier: effective.long_context_output_cost_multiplier,
   });
 }
+function imageModel(model: string, pricing?: Sub2APIPrice): boolean {
+  const normalized = normalizeModel(model);
+  return (
+    pricing?.mode === 'image_generation' ||
+    normalized.startsWith('gpt-image-') ||
+    (normalized.startsWith('grok-imagine') && !normalized.includes('video')) ||
+    (normalized.startsWith('gemini-') && normalized.includes('-image'))
+  );
+}
+function withImagePricing(model: string, price: Price, pricing?: Sub2APIPrice): Price {
+  if (!imageModel(model, pricing)) return price;
+  const normalized = normalizeModel(model);
+  let price1K = pricing?.output_cost_per_image || 0.134;
+  let price2K = price1K * 1.5;
+  let price4K = price1K * 2;
+  if (
+    normalized === 'grok-imagine' ||
+    normalized === 'grok-imagine-image' ||
+    normalized === 'grok-imagine-edit'
+  ) {
+    price1K = 0.02;
+    price2K = 0.02;
+    price4K = 0.02;
+  } else if (normalized === 'grok-imagine-image-quality') {
+    price1K = 0.05;
+    price2K = 0.07;
+    price4K = 0.07;
+  }
+  return {
+    ...price,
+    billing_mode: 'image',
+    image_price_1k: String(price1K),
+    image_price_2k: String(price2K),
+    image_price_4k: String(price4K),
+  };
+}
+
 function defaultPrice(
   model: string,
   values: {
@@ -181,6 +220,10 @@ function defaultPrice(
     values.longInputMultiplier !== undefined &&
     values.longOutputMultiplier !== undefined;
   return {
+    billing_mode: 'token',
+    image_price_1k: '0',
+    image_price_2k: '0',
+    image_price_4k: '0',
     model,
     input: String(values.input ?? 0),
     output: String(values.output ?? 0),
@@ -334,18 +377,22 @@ export async function loadModelCatalog(): Promise<ModelCatalogItem[]> {
         .sort((left, right) => left.provider.localeCompare(right.provider));
       const preferred = preferredProvider(id, owner);
       const exact = matches.find(({ provider }) => provider === preferred) || matches[0];
-      if (exact)
-        return { id, price: priceFromModelsDev(id, exact.cost), source: 'models.dev' as const };
       const fallback = sub2APIFallback(id, sub2Prices);
+      if (exact)
+        return {
+          id,
+          price: withImagePricing(id, priceFromModelsDev(id, exact.cost), fallback?.value),
+          source: 'models.dev' as const,
+        };
       if (fallback)
         return {
           id,
-          price: priceFromSub2API(id, fallback.value),
+          price: withImagePricing(id, priceFromSub2API(id, fallback.value), fallback.value),
           source: fallback.exact ? ('sub2api' as const) : ('sub2api-fallback' as const),
         };
       return {
         id,
-        price: defaultPrice(id, {}),
+        price: withImagePricing(id, defaultPrice(id, {})),
         source: 'sub2api-fallback' as const,
       };
     });

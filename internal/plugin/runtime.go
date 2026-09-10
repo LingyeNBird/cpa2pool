@@ -27,6 +27,8 @@ type execution struct {
 	Metadata       map[string]any
 	EventType      string
 	ChunkIndex     int
+	Outcome        string
+	StatusCode     int
 }
 
 func (r *Runtime) Close() {
@@ -114,7 +116,7 @@ func (r *Runtime) Handle(method string, raw []byte) (any, error) {
 		}
 		return map[string]any{}, nil
 	case "request.complete":
-		return map[string]any{}, r.billing.Complete(req.RequestID)
+		return map[string]any{}, r.billing.Complete(req.RequestID, req.Outcome == "succeeded")
 	}
 	return nil, errors.New("未知插件方法: " + method)
 }

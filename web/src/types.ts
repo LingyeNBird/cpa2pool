@@ -47,6 +47,10 @@ export interface Status {
 }
 export interface Price {
   model: string;
+  billing_mode: 'token' | 'image';
+  image_price_1k: string;
+  image_price_2k: string;
+  image_price_4k: string;
   input: string;
   output: string;
   cache_read: string;
@@ -68,6 +72,8 @@ export interface Usage {
   cache_read: number;
   cache_write: number;
   reasoning: number;
+  images: number;
+  image_size: string;
 }
 export interface Bill {
   id: string;

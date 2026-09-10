@@ -1060,6 +1060,19 @@
           "model": {
             "type": "string"
           },
+          "billing_mode": {
+            "type": "string",
+            "enum": ["token", "image"]
+          },
+          "image_price_1k": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "image_price_2k": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "image_price_4k": {
+            "$ref": "#/components/schemas/Money"
+          },
           "input": {
             "$ref": "#/components/schemas/Money"
           },
@@ -1107,6 +1120,10 @@
         },
         "required": [
           "model",
+          "billing_mode",
+          "image_price_1k",
+          "image_price_2k",
+          "image_price_4k",
           "input",
           "output",
           "cache_read",
@@ -1128,6 +1145,19 @@
         "properties": {
           "model": {
             "type": "string"
+          },
+          "billing_mode": {
+            "type": "string",
+            "enum": ["token", "image"]
+          },
+          "image_price_1k": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "image_price_2k": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "image_price_4k": {
+            "$ref": "#/components/schemas/Money"
           },
           "input": {
             "$ref": "#/components/schemas/Money"
@@ -1448,9 +1478,24 @@
           },
           "reasoning": {
             "type": "integer"
+          },
+          "images": {
+            "type": "integer"
+          },
+          "image_size": {
+            "type": "string",
+            "enum": ["", "1K", "2K", "4K"]
           }
         },
-        "required": ["input", "output", "cache_read", "cache_write", "reasoning"]
+        "required": [
+          "input",
+          "output",
+          "cache_read",
+          "cache_write",
+          "reasoning",
+          "images",
+          "image_size"
+        ]
       },
       "Factor": {
         "type": "object",
