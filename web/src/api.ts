@@ -15,6 +15,18 @@ export async function api<T>(path: string, method = 'GET', body?: unknown): Prom
   if (!response.ok) throw new Error(data.error || `请求失败 (${response.status})`);
   return data.data as T;
 }
+export async function cpaManagement<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+  const options: RequestInit = {
+    method,
+    headers: { Authorization: `Bearer ${key.value}`, 'Content-Type': 'application/json' },
+  };
+  if (body !== undefined) options.body = JSON.stringify(body);
+  const response = await fetch(`/v0/management/${path}`, options);
+  if (response.status === 401) logout();
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || `请求失败 (${response.status})`);
+  return data as T;
+}
 function hostManagementKey(): string {
   // CPA Management Center ed5f1c4: shared-origin storage uses reversible enc::v1:: obfuscation.
   try {

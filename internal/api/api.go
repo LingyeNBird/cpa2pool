@@ -47,6 +47,7 @@ func Routes() []Route {
 		out = append(out, Route{"DELETE", Prefix + "/" + path})
 	}
 	out = append(out, Route{"POST", Prefix + "/adjustments"})
+	out = append(out, Route{"POST", Prefix + "/participant-key-candidates"})
 	for _, path := range []string{"status", "bills", "stats", "periods", "audits"} {
 		out = append(out, Route{"GET", Prefix + "/" + path})
 	}
@@ -114,6 +115,15 @@ func (a API) dispatch(r Request) (any, error) {
 			return ps.Get(id)
 		}
 		return ps.List()
+	case "POST /participant-key-candidates":
+		v, e := decode[struct {
+			Keys      []string `json:"keys"`
+			CurrentID string   `json:"current_id"`
+		}](r.Body)
+		if e != nil {
+			return nil, e
+		}
+		return ps.AvailableKeys(v.Keys, v.CurrentID)
 	case "POST /participants", "PUT /participants":
 		v, e := decode[participant.Input](r.Body)
 		if e != nil {

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import type { Participant } from '../../types';
-import { api, busy, localDate, iso } from '../../api';
+import { api, busy, cpaManagement, localDate, iso } from '../../api';
 import DialogFrame from './DialogFrame.vue';
 import FieldLabel from './FieldLabel.vue';
+import SelectField from './SelectField.vue';
 import DateTimeField from './DateTimeField.vue';
 const props = defineProps<{ participant: Participant | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
@@ -16,6 +17,62 @@ const models = ref(p?.models.join(', ') || '');
 const efforts = ref(p?.efforts.join(', ') || '');
 const expiry = ref(localDate(p?.expires_at));
 const error = ref('');
+const keys = ref<string[]>([]);
+const loadingKeys = ref(true);
+const creatingKey = ref(false);
+const keyOptions = computed(() =>
+  keys.value.map((key) => ({
+    value: key,
+    label: `${key.slice(0, 3)}••••${key.slice(-6)}`,
+  })),
+);
+const apiKeyCharset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+function generateAPIKey() {
+  const characters: string[] = [];
+  const unbiasedLimit = Math.floor(256 / apiKeyCharset.length) * apiKeyCharset.length;
+  while (characters.length < 48) {
+    const bytes = crypto.getRandomValues(new Uint8Array(56));
+    for (const byte of bytes) {
+      if (byte < unbiasedLimit) characters.push(apiKeyCharset[byte % apiKeyCharset.length]);
+      if (characters.length === 48) break;
+    }
+  }
+  return `sk-${characters.join('')}`;
+}
+async function loadKeys() {
+  loadingKeys.value = true;
+  error.value = '';
+  try {
+    const configured = await cpaManagement<{ 'api-keys': string[] }>('api-keys');
+    keys.value = await api<string[]>('participant-key-candidates', 'POST', {
+      keys: configured['api-keys'] || [],
+      current_id: p?.id || '',
+    });
+    if (keys.value.length) draft.api_key = keys.value[0];
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    loadingKeys.value = false;
+  }
+}
+async function createKey() {
+  creatingKey.value = true;
+  error.value = '';
+  try {
+    const key = generateAPIKey();
+    await cpaManagement('api-keys', 'PATCH', {
+      old: `cpa2pool-missing-${key}`,
+      new: key,
+    });
+    keys.value = [key];
+    draft.api_key = key;
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    creatingKey.value = false;
+  }
+}
+onMounted(loadKeys);
 async function save() {
   busy.value = true;
   error.value = '';
@@ -48,17 +105,24 @@ async function save() {
         <label class="field"
           ><span>名称</span><input v-model="draft.name" class="input" required
         /></label>
-        <label class="field"
-          ><FieldLabel
-            text="API Key"
-            tip="关联已在 CPA 配置的 API Key。更换密钥不改变参与者标识；编辑时留空则保留。" /><input
-            v-model="draft.api_key"
-            class="input"
-            type="password"
-            autocomplete="new-password"
-            :required="!p"
-            :placeholder="p?.key_preview"
-        /></label>
+        <SelectField
+          v-if="keys.length"
+          v-model="draft.api_key"
+          label="API Key"
+          tip="仅显示 CPA 中尚未关联其他参与者的 API Key。"
+          :options="keyOptions"
+        />
+        <div v-else class="field">
+          <FieldLabel text="API Key" tip="CPA 中没有尚未关联参与者的 API Key。" />
+          <button
+            type="button"
+            class="btn"
+            :disabled="loadingKeys || creatingKey"
+            @click="createKey"
+          >
+            {{ loadingKeys ? '读取中' : creatingKey ? '创建中' : '创建 API Key' }}
+          </button>
+        </div>
         <label class="field full-width"
           ><span>备注</span><textarea v-model="draft.note" class="textarea" rows="2" />
         </label>
@@ -94,7 +158,9 @@ async function save() {
       </div>
       <div class="form-actions">
         <button type="button" class="btn" @click="emit('close')">取消</button
-        ><button class="btn btn-primary" :disabled="busy">保存</button>
+        ><button class="btn btn-primary" :disabled="busy || loadingKeys || (!p && !draft.api_key)">
+          保存
+        </button>
       </div>
     </form></DialogFrame
   >

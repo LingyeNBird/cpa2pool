@@ -30,6 +30,49 @@ func Get(q store.Query, id string) (domain.Participant, error) {
 func ByScope(q store.Query, scope string) (domain.Participant, error) {
 	return store.One[domain.Participant](q, "SELECT body FROM participants WHERE scope=?", scope)
 }
+func (s Service) AvailableKeys(keys []string, currentID string) ([]string, error) {
+	rows, err := s.Store.DB.Query("SELECT id,scope FROM participants")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	used := map[string]bool{}
+	var currentScope string
+	for rows.Next() {
+		var id, scope string
+		if err = rows.Scan(&id, &scope); err != nil {
+			return nil, err
+		}
+		if id == currentID {
+			currentScope = scope
+		} else {
+			used[scope] = true
+		}
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	available := make([]string, 0, len(keys))
+	seen := map[string]bool{}
+	var currentKey string
+	for _, key := range keys {
+		key = strings.TrimSpace(key)
+		scope := Scope(key)
+		if key == "" || seen[key] || used[scope] {
+			continue
+		}
+		if scope == currentScope {
+			currentKey = key
+		} else {
+			available = append(available, key)
+		}
+		seen[key] = true
+	}
+	if currentKey != "" {
+		available = append([]string{currentKey}, available...)
+	}
+	return available, nil
+}
 func (s Service) Save(in Input) (domain.Participant, error) {
 	var out domain.Participant
 	err := s.Store.Tx(func(tx *sql.Tx) error {
