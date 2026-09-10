@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import type { Price } from '../../types';
 import { api, busy } from '../../api';
 import DialogFrame from './DialogFrame.vue';
 import FieldLabel from './FieldLabel.vue';
 import NumberField from './NumberField.vue';
 import BinaryChoiceField from './components/BinaryChoiceField.vue';
+import SelectField from './SelectField.vue';
+import { loadModelCatalog, type ModelCatalogItem } from '../../modelCatalog';
 const props = defineProps<{ price: Price | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const draft = reactive<Price>({
@@ -28,6 +30,40 @@ const draft = reactive<Price>({
   }),
 });
 const error = ref('');
+const catalog = ref<ModelCatalogItem[]>([]);
+const loadingCatalog = ref(!props.price);
+const catalogError = ref('');
+const modelOptions = computed(() =>
+  catalog.value.map((item) => ({
+    value: item.id,
+    label: item.hasPrice ? item.id : `${item.id} · models.dev 暂无价格`,
+  })),
+);
+function applyCatalogPrice() {
+  const item = catalog.value.find((candidate) => candidate.id === draft.model);
+  if (!item) return;
+  draft.input = item.input;
+  draft.output = item.output;
+  draft.cache_read = item.cacheRead;
+  draft.cache_write = item.cacheWrite;
+}
+async function loadCatalog() {
+  if (props.price) return;
+  try {
+    catalog.value = await loadModelCatalog();
+    if (!catalog.value.length) {
+      catalogError.value = 'CPA 当前没有返回可用模型，请手动填写模型名称和价格。';
+      return;
+    }
+    draft.model = catalog.value[0].id;
+    applyCatalogPrice();
+  } catch (e) {
+    catalogError.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    loadingCatalog.value = false;
+  }
+}
+onMounted(loadCatalog);
 async function save() {
   busy.value = true;
   error.value = '';
@@ -52,15 +88,26 @@ const rates = [
     ><form @submit.prevent="save">
       <div v-if="error" class="alert alert-error error-bar">{{ error }}</div>
       <div class="form-grid">
-        <label class="field full-width"
+        <label v-if="price || catalogError" class="field full-width"
           ><FieldLabel
             text="模型"
-            tip="填写上游实际模型名称。修改规则仅影响新请求，历史消费保持原计价快照。" /><input
+            tip="模型目录读取失败时可手动填写；修改规则仅影响新请求，历史消费保持原计价快照。" /><input
             v-model="draft.model"
             class="input"
             :readonly="!!price"
             required
         /></label>
+        <SelectField
+          v-else
+          v-model="draft.model"
+          class="full-width"
+          label="模型"
+          tip="来自 CPA 当前所有渠道的可用模型；选择后自动填入 models.dev 默认价格。"
+          :options="modelOptions"
+          :disabled="loadingCatalog"
+          @change="applyCatalogPrice"
+        />
+        <div v-if="catalogError && !price" class="alert full-width">{{ catalogError }}</div>
         <NumberField
           v-for="rate in rates"
           :key="rate.key"
@@ -137,7 +184,7 @@ const rates = [
       </div>
       <div class="form-actions">
         <button type="button" class="btn" @click="emit('close')">取消</button
-        ><button class="btn btn-primary" :disabled="busy">保存</button>
+        ><button class="btn btn-primary" :disabled="busy || loadingCatalog">保存</button>
       </div>
     </form></DialogFrame
   >
