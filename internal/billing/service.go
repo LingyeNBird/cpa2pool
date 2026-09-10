@@ -128,20 +128,16 @@ func (s *Service) Response(id string, body []byte, stream bool) error {
 	if p == nil || p.Charged {
 		return nil
 	}
-	if p.Image {
-		if stream {
-			return nil
-		}
-		if count := ImageResponseCount(body); count > 0 {
-			p.ImageCount = count
-		}
-		return s.charge(id, p)
-	}
 	if stream {
 		p.Meter.Stream(body)
 		return nil
 	}
 	p.Meter.JSON(body)
+	if p.Image {
+		if count := ImageResponseCount(body); count > 0 {
+			p.ImageCount = count
+		}
+	}
 	return s.charge(id, p)
 }
 func (s *Service) Complete(id string, succeeded bool) error {
@@ -152,13 +148,13 @@ func (s *Service) Complete(id string, succeeded bool) error {
 		return nil
 	}
 	defer delete(s.pending, id)
+	p.Meter.Flush()
 	if p.Image {
 		if !succeeded || p.Charged {
 			return nil
 		}
 		return s.charge(id, p)
 	}
-	p.Meter.Flush()
 	if !p.Meter.Seen || p.Charged {
 		return nil
 	}
@@ -169,7 +165,7 @@ func (s *Service) charge(id string, p *Pending) error {
 		return errors.New("上游未返回 Token 用量，无法计费")
 	}
 	model := p.Model
-	if p.Meter.Model != "" {
+	if !p.Image && p.Meter.Model != "" {
 		model = p.Meter.Model
 	}
 	price, ok := p.Prices[model]
@@ -185,7 +181,9 @@ func (s *Service) charge(id string, p *Pending) error {
 	if p.Image {
 		usage.Images = p.ImageCount
 		usage.ImageSize = p.ImageSize
-		charge = pricing.CalculateImage(price, p.ImageCount, p.ImageSize)
+		imageCharge := pricing.CalculateImage(price, p.ImageCount, p.ImageSize)
+		charge.Base += imageCharge.Base
+		charge.Final += imageCharge.Final
 	}
 	bill := domain.Bill{ID: domain.ID(), RequestID: id, ParticipantID: p.ParticipantID, Model: model, RequestedModel: p.RequestedModel, Effort: p.Effort, ServiceTier: tier, Time: domain.Now(), Usage: usage, Charge: charge}
 	err := s.Store.Tx(func(tx *sql.Tx) error {

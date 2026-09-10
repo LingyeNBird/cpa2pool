@@ -8,7 +8,7 @@ import NumberField from './NumberField.vue';
 import BinaryChoiceField from './components/BinaryChoiceField.vue';
 import SelectField from './SelectField.vue';
 import { loadModelCatalog, type ModelCatalogItem } from '../../modelCatalog';
-const props = defineProps<{ price: Price | null }>();
+const props = defineProps<{ price: Price | null; mode?: 'token' | 'image' }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const draft = reactive<Price>(
   props.price
@@ -77,6 +77,7 @@ async function loadCatalog() {
 }
 onMounted(loadCatalog);
 async function save() {
+  draft.billing_mode = props.mode === 'image' ? 'image' : draft.billing_mode || 'token';
   busy.value = true;
   error.value = '';
   try {
@@ -96,7 +97,9 @@ const rates = [
 ] as const;
 </script>
 <template>
-  <DialogFrame :title="price ? '编辑计费' : '添加模型'" @close="emit('close')"
+  <DialogFrame
+    :title="price ? (mode === 'image' ? '编辑图片计费' : '编辑 Token 计费') : '添加模型'"
+    @close="emit('close')"
     ><form @submit.prevent="save">
       <div v-if="error" class="alert alert-error error-bar">{{ error }}</div>
       <div class="form-grid">
@@ -120,17 +123,7 @@ const rates = [
           @change="applyCatalogPrice"
         />
         <div v-if="catalogError && !price" class="alert full-width">{{ catalogError }}</div>
-        <SelectField
-          v-model="draft.billing_mode"
-          class="full-width"
-          label="计费模式"
-          tip="图片按次根据生成张数和 1K、2K、4K 档位计费。"
-          :options="[
-            { value: 'token', label: 'Token' },
-            { value: 'image', label: '图片按次' },
-          ]"
-        />
-        <template v-if="draft.billing_mode === 'image'">
+        <template v-if="mode === 'image'">
           <NumberField
             v-model="draft.image_price_1k"
             label="1K 每张价格"
@@ -219,7 +212,7 @@ const rates = [
           :disabled="!draft.model_enabled"
         />
         <BinaryChoiceField
-          v-if="draft.billing_mode !== 'image'"
+          v-if="mode !== 'image'"
           v-model="draft.combination"
           class="full-width"
           label="组合方式"

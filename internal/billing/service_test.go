@@ -39,6 +39,7 @@ func TestImageRequestChargesPerSuccessfulImageExactlyOnce(t *testing.T) {
 		ImagePrice1K: 134_000_000,
 		ImagePrice2K: 201_000_000,
 		ImagePrice4K: 268_000_000,
+		Input:        1_000_000_000,
 		Combination:  "multiply",
 	}); err != nil {
 		t.Fatal(err)
@@ -51,7 +52,7 @@ func TestImageRequestChargesPerSuccessfulImageExactlyOnce(t *testing.T) {
 	if err = service.After("image-1", "gpt-5"); err != nil {
 		t.Fatal(err)
 	}
-	response := []byte(`{"data":[{"b64_json":"a"},{"b64_json":"b"}]}`)
+	response := []byte(`{"usage":{"input_tokens":1000,"output_tokens":0},"data":[{"b64_json":"a"},{"b64_json":"b"}]}`)
 	if err = service.Response("image-1", response, false); err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +68,7 @@ func TestImageRequestChargesPerSuccessfulImageExactlyOnce(t *testing.T) {
 	if err = db.DB.QueryRow("SELECT count(*),sum(cost) FROM bills").Scan(&billCount, &cost); err != nil {
 		t.Fatal(err)
 	}
-	if billCount != 1 || cost != 268_000_000 {
-		t.Fatalf("image bills = %d cost = %d, want 1 and 268000000", billCount, cost)
+	if billCount != 1 || cost != 269_000_000 {
+		t.Fatalf("combined image bill = %d cost = %d, want 1 and 269000000", billCount, cost)
 	}
 }
