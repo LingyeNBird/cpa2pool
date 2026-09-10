@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AnimatedValue from './components/AnimatedValue.vue';
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { PhPlus, PhPencilSimple, PhPause, PhPlay, PhTrash, PhWallet } from '@phosphor-icons/vue';
 import { api, act, busy, money, reason, date } from '../api';
 import type { Participant, Status } from '../types';
 import ParticipantEditor from './components/ParticipantEditor.vue';
 import QuotaPanel from './components/QuotaPanel.vue';
 import DialogFrame from './components/DialogFrame.vue';
+import TablePagination from './components/TablePagination.vue';
 import './ParticipantsPage.css';
 const participants = ref<Participant[]>([]);
 const statuses = ref<Record<string, Status>>({});
@@ -18,6 +19,13 @@ const selected = ref<Participant | null>(null);
 const removing = ref<Participant | null>(null);
 const shown = computed(() =>
   participants.value.filter((p) => `${p.name} ${p.note}`.includes(search.value)),
+);
+const page = ref(1);
+const paged = computed(() => shown.value.slice((page.value - 1) * 10, page.value * 10));
+watch(search, () => (page.value = 1));
+watch(
+  () => shown.value.length,
+  (total) => (page.value = Math.min(page.value, Math.max(1, Math.ceil(total / 10)))),
 );
 async function load() {
   loading.value = true;
@@ -92,7 +100,7 @@ onMounted(() => act(load));
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in shown" :key="p.id">
+            <tr v-for="p in paged" :key="p.id">
               <td>
                 <button class="participant-name" @click="selected = p">{{ p.name }}</button>
                 <div class="participant-key">{{ p.key_preview }}</div>
@@ -142,6 +150,12 @@ onMounted(() => act(load));
           </tbody>
         </table>
       </div>
+      <TablePagination
+        v-if="shown.length"
+        :total="shown.length"
+        :page="page"
+        @page="page = $event"
+      />
     </div>
     <ParticipantEditor
       v-if="showEditor"

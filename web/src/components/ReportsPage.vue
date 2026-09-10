@@ -10,6 +10,7 @@ import BillsTable from './components/BillsTable.vue';
 import PeriodsTable from './components/PeriodsTable.vue';
 import AuditsTable from './components/AuditsTable.vue';
 import SelectField from './components/SelectField.vue';
+import TablePagination from './components/TablePagination.vue';
 import './ReportsPage.css';
 const participants = ref<Participant[]>([]);
 const names = computed(() => Object.fromEntries(participants.value.map((p) => [p.id, p.name])));
@@ -32,6 +33,7 @@ onBeforeUnmount(() => {
   generation++;
 });
 let filters = new URLSearchParams();
+const PAGE_SIZE = 10;
 const tabs = [
   { id: 'bills', label: '请求账单' },
   { id: 'stats', label: '消费统计' },
@@ -47,7 +49,7 @@ async function load() {
   loading.value = true;
   try {
     const q = new URLSearchParams(filterSnapshot);
-    q.set('limit', '20');
+    q.set('limit', String(PAGE_SIZE));
     q.set('offset', String(requestedOffset));
     const summary = (await api<Stat[]>(`stats?${filterSnapshot}`))[0];
     if (request !== generation) return;
@@ -62,14 +64,18 @@ async function load() {
       audits.value = page.items;
       count.value = page.total;
     } else if (requestedTab === 'periods') {
-      const rows = await api<Period[]>(`periods?${q}`);
+      const rows = await api<Period[]>(`periods?${filterSnapshot}`);
       if (request !== generation) return;
-      history.value = rows;
+      count.value = rows.length;
+      history.value = rows.slice(requestedOffset, requestedOffset + PAGE_SIZE);
     } else {
       q.set('group', requestedGroup);
+      q.set('limit', '200');
+      q.set('offset', '0');
       const rows = await api<Stat[]>(`stats?${q}`);
       if (request !== generation) return;
-      stats.value = rows;
+      count.value = rows.length;
+      stats.value = rows.slice(requestedOffset, requestedOffset + PAGE_SIZE);
     }
     total.value = summary;
     displayedTab.value = requestedTab;
@@ -101,8 +107,8 @@ async function switchTab(value: string) {
   }
   await act(load);
 }
-async function paginate(delta: number) {
-  offset.value = displayedOffset.value + delta;
+async function goPage(page: number) {
+  offset.value = (page - 1) * PAGE_SIZE;
   await act(load);
 }
 onMounted(() =>
@@ -185,23 +191,13 @@ onMounted(() =>
             <td class="amount"><AnimatedValue :value="money(s.cost)" /></td>
           </template> </ReportTable
       ></template>
-      <div v-if="['bills', 'audits'].includes(displayedTab)" class="pagination">
-        <span><AnimatedValue :value="count" /> 条</span
-        ><button
-          class="btn btn-sm"
-          :disabled="displayedOffset === 0 || loading"
-          @click="paginate(-20)"
-        >
-          上一页</button
-        ><span><AnimatedValue :value="Math.floor(displayedOffset / 20) + 1" /></span
-        ><button
-          class="btn btn-sm"
-          :disabled="displayedOffset + 20 >= count || loading"
-          @click="paginate(20)"
-        >
-          下一页
-        </button>
-      </div>
+      <TablePagination
+        :total="count"
+        :page="Math.floor(displayedOffset / PAGE_SIZE) + 1"
+        :page-size="PAGE_SIZE"
+        :disabled="loading"
+        @page="goPage"
+      />
     </div>
   </section>
 </template>

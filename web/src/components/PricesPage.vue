@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AnimatedValue from './components/AnimatedValue.vue';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { PhPlus, PhPencilSimple, PhTrash } from '@phosphor-icons/vue';
 import { api, act, busy, money } from '../api';
 import type { Price } from '../types';
 import PriceEditor from './components/PriceEditor.vue';
 import DialogFrame from './components/DialogFrame.vue';
 import FieldLabel from './components/FieldLabel.vue';
+import TablePagination from './components/TablePagination.vue';
 import { loadModelCatalog } from '../modelCatalog';
 import './PricesPage.css';
 const prices = ref<Price[]>([]);
@@ -24,6 +25,20 @@ const videoPrices = computed(() =>
       Number(price.video_price_1024p) ||
       Number(price.video_price_1080p),
   ),
+);
+const page = ref(1);
+const activePrices = computed(() =>
+  activeTable.value === 'image'
+    ? imagePrices.value
+    : activeTable.value === 'video'
+      ? videoPrices.value
+      : prices.value,
+);
+const pagedPrices = computed(() => activePrices.value.slice((page.value - 1) * 10, page.value * 10));
+watch(activeTable, () => (page.value = 1));
+watch(
+  () => activePrices.value.length,
+  (total) => (page.value = Math.min(page.value, Math.max(1, Math.ceil(total / 10)))),
 );
 const loading = ref(true);
 const catalogError = ref('');
@@ -117,7 +132,7 @@ onMounted(() => act(load));
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in prices" :key="p.model">
+            <tr v-for="p in pagedPrices" :key="p.model">
               <td><strong>{{ p.model }}</strong></td>
               <td class="amount"><AnimatedValue :value="money(p.input)" /></td>
               <td class="amount"><AnimatedValue :value="money(p.output)" /></td>
@@ -176,7 +191,7 @@ onMounted(() => act(load));
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in imagePrices" :key="p.model">
+            <tr v-for="p in pagedPrices" :key="p.model">
               <td><strong>{{ p.model }}</strong></td>
               <td class="amount"><AnimatedValue :value="money(p.image_price_1k)" /></td>
               <td class="amount"><AnimatedValue :value="money(p.image_price_2k)" /></td>
@@ -220,7 +235,7 @@ onMounted(() => act(load));
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in videoPrices" :key="p.model">
+            <tr v-for="p in pagedPrices" :key="p.model">
               <td><strong>{{ p.model }}</strong></td>
               <td class="amount"><AnimatedValue :value="money(p.video_price_480p)" /></td>
               <td class="amount"><AnimatedValue :value="money(p.video_price_720p)" /></td>
@@ -249,6 +264,12 @@ onMounted(() => act(load));
       <div v-else class="empty">
         当前模型目录没有{{ activeTable === 'video' ? '视频' : '图片' }}生成模型
       </div>
+      <TablePagination
+        v-if="activePrices.length"
+        :total="activePrices.length"
+        :page="page"
+        @page="page = $event"
+      />
     </div>
     <PriceEditor
       v-if="showEditor"

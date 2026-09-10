@@ -4,14 +4,6 @@
   flex-wrap: wrap;
   margin-bottom: 20px;
 }
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 14px;
-  margin-top: 22px;
-  font-size: 0.82rem;
-}
 .stats-group {
   display: flex;
   align-items: center;
