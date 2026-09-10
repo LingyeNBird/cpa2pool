@@ -20,6 +20,7 @@ const id = useId();
 const root = ref<HTMLElement>();
 const picker = ref<InstanceType<typeof VueDatePicker>>();
 const portal = shallowRef<HTMLElement>();
+const hostDialog = shallowRef<HTMLDialogElement>();
 const open = ref(false);
 const timeEditorOpen = ref(false);
 const selectedTime = ref('');
@@ -27,13 +28,12 @@ const selectedDate = shallowRef<Date | null>(null);
 const timePreview = ref<HTMLElement>();
 const inputFormat = 'yyyy-MM-dd HH:mm';
 onMounted(() => {
-  // Keep the popup in the modal's top layer, outside its scrolling panel.
-  portal.value = root.value?.closest('dialog') || document.body;
-  if (portal.value instanceof HTMLDialogElement) {
-    portal.value.addEventListener('cancel', dismissCalendarFirst, true);
-  }
+  hostDialog.value = root.value?.closest('dialog') || undefined;
+  portal.value =
+    hostDialog.value?.querySelector<HTMLElement>('.dialog-portal-host') || document.body;
+  hostDialog.value?.addEventListener('cancel', dismissCalendarFirst, true);
 });
-onBeforeUnmount(() => portal.value?.removeEventListener('cancel', dismissCalendarFirst, true));
+onBeforeUnmount(() => hostDialog.value?.removeEventListener('cancel', dismissCalendarFirst, true));
 function dismissCalendarFirst(event: Event) {
   if (!open.value) return;
   event.preventDefault();

@@ -32,7 +32,9 @@ const selected = computed(() => {
   return index < 0 ? undefined : String(index);
 });
 onMounted(() => {
-  portal.value = root.value?.closest('dialog') || document.body;
+  portal.value =
+    root.value?.closest('dialog')?.querySelector<HTMLElement>('.dialog-portal-host') ||
+    document.body;
 });
 function select(value: unknown) {
   if (typeof value !== 'string') return;

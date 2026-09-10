@@ -28,5 +28,6 @@ onMounted(() => dialog.value?.showModal());
       </header>
       <slot />
     </section>
+    <div class="dialog-portal-host"></div>
   </dialog>
 </template>

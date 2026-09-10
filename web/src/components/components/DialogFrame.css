@@ -1,6 +1,14 @@
 .dialog-frame {
   padding: 16px;
 }
+.dialog-portal-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.dialog-portal-host > * {
+  pointer-events: auto;
+}
 .dialog-frame::backdrop {
   background: #273d3040;
 }
