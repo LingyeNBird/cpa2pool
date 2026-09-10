@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { PhQuestion } from '@phosphor-icons/vue';
+import TooltipIcon from './TooltipIcon.vue';
 import './FieldLabel.css';
 defineProps<{ text: string; tip?: string }>();
 </script>
 <template>
-  <span class="field-label"
-    >{{ text
-    }}<span v-if="tip" class="tooltip tooltip-bottom" :data-tip="tip"
-      ><PhQuestion :size="16" tabindex="0" :aria-label="tip" /></span
-  ></span>
+  <span class="field-label">
+    {{ text }}
+    <TooltipIcon v-if="tip" :tip="tip" />
+  </span>
 </template>

@@ -1,17 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import {
-  PhUsers,
-  PhSlidersHorizontal,
-  PhReceipt,
-  PhChartLine,
-  PhQuestion,
-} from '@phosphor-icons/vue';
+import { PhUsers, PhSlidersHorizontal, PhReceipt, PhChartLine } from '@phosphor-icons/vue';
 import { authenticated, login, restoreLogin, logout, act, failure, busy } from './api';
 import ParticipantsPage from './components/ParticipantsPage.vue';
 import PricesPage from './components/PricesPage.vue';
 import ReportsPage from './components/ReportsPage.vue';
 import PageActions from './components/PageActions.vue';
+import TooltipIcon from './components/components/TooltipIcon.vue';
 import './App.css';
 const credential = ref('');
 const restoring = ref(true);
@@ -53,11 +48,11 @@ onMounted(async () => {
     <form v-else-if="!authenticated" class="panel login-panel" @submit.prevent="signIn">
       <h2>
         连接管理中心
-        <span
-          class="tooltip tooltip-bottom"
-          data-tip="自动使用同源 CPA 管理面板记住的登录。手动输入的密钥仅保存在当前页面内存中。"
-          ><PhQuestion :size="19" tabindex="0" aria-label="连接说明"
-        /></span>
+        <TooltipIcon
+          tip="自动使用同源 CPA 管理面板记住的登录。手动输入的密钥仅保存在当前页面内存中。"
+          label="连接说明"
+          :size="19"
+        />
       </h2>
       <label class="field"
         ><span>管理密钥</span
