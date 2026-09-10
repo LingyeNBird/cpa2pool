@@ -1,0 +1,90 @@
+.model-picker-field > label {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.model-picker-trigger {
+  justify-content: flex-start;
+  width: 100%;
+  min-height: 40px;
+  background: var(--color-base-100);
+  font-weight: 400;
+}
+.model-picker-popup {
+  position: fixed;
+  z-index: 2147483647;
+  width: min(520px, calc(100vw - 24px));
+  max-height: min(360px, calc(100dvh - 24px));
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 14px;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  box-shadow: 4px 4px 0 var(--surface-depth);
+}
+.model-picker-popup:popover-open {
+  animation: model-picker-enter 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.model-picker-popup header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.model-picker-popup header span {
+  color: #617058;
+  font-size: 0.78rem;
+}
+.model-picker-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.model-picker-option {
+  padding: 8px 12px;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 8px;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    transform 100ms,
+    box-shadow 100ms,
+    background-color 100ms,
+    color 100ms;
+}
+.model-picker-option.is-selected {
+  background: var(--color-primary);
+  box-shadow: 3px 3px 0 var(--surface-depth);
+  color: var(--color-primary-content);
+}
+.model-picker-option:active {
+  transform: translate(3px, 3px);
+  background: color-mix(in srgb, var(--color-primary) 78%, var(--color-base-100));
+  box-shadow: inset 3px 3px 0 var(--surface-depth);
+}
+.model-picker-option > span {
+  display: inline-block;
+  transition: transform 100ms;
+}
+.model-picker-option:active > span {
+  transform: translate(3px, 3px);
+}
+.model-picker-option:focus-visible {
+  outline: 2px solid var(--color-base-content);
+  outline-offset: -4px;
+}
+@keyframes model-picker-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .model-picker-popup:popover-open {
+    animation: none;
+  }
+}

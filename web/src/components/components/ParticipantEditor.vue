@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
-import type { Participant } from '../../types';
+import type { Participant, Price } from '../../types';
 import { api, busy, cpaManagement, localDate, iso } from '../../api';
 import DialogFrame from './DialogFrame.vue';
 import FieldLabel from './FieldLabel.vue';
 import SelectField from './SelectField.vue';
+import ModelPicker from './components/ModelPicker.vue';
 import DateTimeField from './DateTimeField.vue';
 const props = defineProps<{ participant: Participant | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
@@ -13,7 +14,9 @@ const draft = reactive({
   ...(p || { id: '', name: '', note: '', enabled: true, paused: false }),
   api_key: '',
 });
-const models = ref(p?.models.join(', ') || '');
+const availableModels = ref<string[]>([]);
+const selectedModels = ref<string[]>([]);
+const loadingModels = ref(true);
 const efforts = ref(p?.efforts.join(', ') || '');
 const expiry = ref(localDate(p?.expires_at));
 const error = ref('');
@@ -55,6 +58,24 @@ async function loadKeys() {
     loadingKeys.value = false;
   }
 }
+async function loadModels() {
+  loadingModels.value = true;
+  try {
+    const prices = await api<Price[]>('prices');
+    availableModels.value = prices.map((price) => price.model);
+    const configured = p?.models || [];
+    selectedModels.value = configured.length
+      ? availableModels.value.filter((model) => configured.includes(model))
+      : [...availableModels.value];
+    if (!selectedModels.value.length && availableModels.value.length) {
+      selectedModels.value = [...availableModels.value];
+    }
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    loadingModels.value = false;
+  }
+}
 async function createKey() {
   creatingKey.value = true;
   error.value = '';
@@ -72,17 +93,18 @@ async function createKey() {
     creatingKey.value = false;
   }
 }
-onMounted(loadKeys);
+onMounted(() => {
+  loadKeys();
+  loadModels();
+});
 async function save() {
   busy.value = true;
   error.value = '';
   try {
     await api('participants', p ? 'PUT' : 'POST', {
       ...draft,
-      models: models.value
-        .split(',')
-        .map((v) => v.trim())
-        .filter(Boolean),
+      models:
+        selectedModels.value.length === availableModels.value.length ? [] : selectedModels.value,
       efforts: efforts.value
         .split(',')
         .map((v) => v.trim())
@@ -126,13 +148,13 @@ async function save() {
         <label class="field full-width"
           ><span>备注</span><textarea v-model="draft.note" class="textarea" rows="2" />
         </label>
-        <label class="field"
-          ><FieldLabel
-            text="允许模型"
-            tip="逗号分隔客户端模型名称，留空允许全部已定价模型。" /><input
-            v-model="models"
-            class="input"
-        /></label>
+        <ModelPicker
+          v-model="selectedModels"
+          label="允许模型"
+          tip="至少保留一个模型；选择全部时允许所有已定价模型。"
+          :options="availableModels"
+          :disabled="loadingModels"
+        />
         <label class="field"
           ><FieldLabel
             text="推理强度"
@@ -158,7 +180,10 @@ async function save() {
       </div>
       <div class="form-actions">
         <button type="button" class="btn" @click="emit('close')">取消</button
-        ><button class="btn btn-primary" :disabled="busy || loadingKeys || (!p && !draft.api_key)">
+        ><button
+          class="btn btn-primary"
+          :disabled="busy || loadingKeys || loadingModels || (!p && !draft.api_key)"
+        >
           保存
         </button>
       </div>
