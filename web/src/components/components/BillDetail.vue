@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnimatedValue from './AnimatedValue.vue';
 import type { Bill } from '../../types';
 import { money, date } from '../../api';
 import DialogFrame from './DialogFrame.vue';
@@ -39,27 +40,27 @@ const factors: Record<string, string> = {
         <tbody>
           <tr>
             <td>输入</td>
-            <td>{{ bill.usage.input }}</td>
-            <td>{{ money(bill.charge.price.input) }}</td>
+            <td><AnimatedValue :value="bill.usage.input" /></td>
+            <td><AnimatedValue :value="money(bill.charge.price.input)" /></td>
           </tr>
           <tr>
             <td>输出</td>
-            <td>{{ bill.usage.output }}</td>
-            <td>{{ money(bill.charge.price.output) }}</td>
+            <td><AnimatedValue :value="bill.usage.output" /></td>
+            <td><AnimatedValue :value="money(bill.charge.price.output)" /></td>
           </tr>
           <tr>
             <td>缓存读取</td>
-            <td>{{ bill.usage.cache_read }}</td>
-            <td>{{ money(bill.charge.price.cache_read) }}</td>
+            <td><AnimatedValue :value="bill.usage.cache_read" /></td>
+            <td><AnimatedValue :value="money(bill.charge.price.cache_read)" /></td>
           </tr>
           <tr>
             <td>缓存写入</td>
-            <td>{{ bill.usage.cache_write }}</td>
-            <td>{{ money(bill.charge.price.cache_write) }}</td>
+            <td><AnimatedValue :value="bill.usage.cache_write" /></td>
+            <td><AnimatedValue :value="money(bill.charge.price.cache_write)" /></td>
           </tr>
           <tr>
             <td>推理（已含输出）</td>
-            <td>{{ bill.usage.reasoning }}</td>
+            <td><AnimatedValue :value="bill.usage.reasoning" /></td>
             <td>不重复计费</td>
           </tr>
         </tbody>
@@ -68,15 +69,15 @@ const factors: Record<string, string> = {
     <hr class="divider-line" />
     <dl class="detail-list">
       <dt>基础费用</dt>
-      <dd class="amount">{{ money(bill.charge.base) }}</dd>
+      <dd class="amount"><AnimatedValue :value="money(bill.charge.base)" /></dd>
       <template v-for="f in bill.charge.factors" :key="f.name"
         ><dt>{{ factors[f.name] }}</dt>
-        <dd>输入 ×{{ f.input }} · 输出 ×{{ f.output }}</dd></template
-      >
+        <dd>输入 ×<AnimatedValue :value="f.input" /> · 输出 ×<AnimatedValue :value="f.output" /></dd
+      ></template>
       <dt>组合方式</dt>
       <dd>{{ bill.charge.price.combination === 'max' ? '取最大值' : '相乘' }}</dd>
       <dt>最终扣费</dt>
-      <dd class="amount">{{ money(bill.charge.final) }}</dd>
+      <dd class="amount"><AnimatedValue :value="money(bill.charge.final)" /></dd>
       <dt>价格版本时间</dt>
       <dd>{{ date(bill.charge.price.updated_at) }}</dd>
     </dl></DialogFrame

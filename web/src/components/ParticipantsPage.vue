@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnimatedValue from './components/AnimatedValue.vue';
 import { onMounted, ref, computed } from 'vue';
 import { PhPlus, PhPencilSimple, PhPause, PhPlay, PhTrash, PhWallet } from '@phosphor-icons/vue';
 import { api, act, busy, money, reason, date } from '../api';
@@ -58,7 +59,7 @@ onMounted(() => act(load));
   <section>
     <div class="section-heading">
       <h2>
-        参与者 <span class="participant-count">{{ participants.length }}</span>
+        参与者 <span class="participant-count"><AnimatedValue :value="participants.length" /></span>
       </h2>
       <button
         class="btn btn-primary"
@@ -105,8 +106,8 @@ onMounted(() => act(load));
                   }}</span
                 >
               </td>
-              <td class="amount">{{ money(statuses[p.id]?.used) }}</td>
-              <td class="amount">{{ money(statuses[p.id]?.remaining) }}</td>
+              <td class="amount"><AnimatedValue :value="money(statuses[p.id]?.used)" /></td>
+              <td class="amount"><AnimatedValue :value="money(statuses[p.id]?.remaining)" /></td>
               <td>{{ date(p.expires_at) }}</td>
               <td>
                 <div class="row-actions">

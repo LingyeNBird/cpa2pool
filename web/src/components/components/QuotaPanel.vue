@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnimatedValue from './AnimatedValue.vue';
 import { onMounted, ref } from 'vue';
 import { PhPlus } from '@phosphor-icons/vue';
 import { api, act, money, date, reason, periods } from '../../api';
@@ -32,9 +33,9 @@ onMounted(() => act(load));
       <dt>当前状态</dt>
       <dd>{{ status?.available ? '可用' : status?.reasons.map(reason).join('、') }}</dd>
       <dt>累计消费</dt>
-      <dd class="amount">{{ money(status?.used) }}</dd>
+      <dd class="amount"><AnimatedValue :value="money(status?.used)" /></dd>
       <dt>可用额度</dt>
-      <dd class="amount">{{ money(status?.remaining) }}</dd>
+      <dd class="amount"><AnimatedValue :value="money(status?.remaining)" /></dd>
     </dl>
     <hr class="divider-line" />
     <div class="section-heading">
@@ -59,13 +60,13 @@ onMounted(() => act(load));
       </div>
       <div class="quota-amounts">
         <div>
-          <span>限额</span><strong>{{ money(q.current.limit) }}</strong>
+          <span>限额</span><strong><AnimatedValue :value="money(q.current.limit)" /></strong>
         </div>
         <div>
-          <span>已用</span><strong>{{ money(q.current.used) }}</strong>
+          <span>已用</span><strong><AnimatedValue :value="money(q.current.used)" /></strong>
         </div>
         <div>
-          <span>剩余</span><strong>{{ money(q.current.remaining) }}</strong>
+          <span>剩余</span><strong><AnimatedValue :value="money(q.current.remaining)" /></strong>
         </div>
       </div>
       <dl class="quota-dates">

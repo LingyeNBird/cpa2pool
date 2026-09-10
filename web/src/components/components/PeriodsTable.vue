@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnimatedValue from './AnimatedValue.vue';
 import type { Period } from '../../types';
 import { date, money } from '../../api';
 defineProps<{
@@ -31,9 +32,9 @@ defineProps<{
           <td>{{ date(p.starts_at) }}</td>
           <td>{{ date(p.ends_at) }}</td>
           <td>{{ p.closed_at ? date(p.closed_at) : '当前周期' }}</td>
-          <td class="amount">{{ money(p.limit) }}</td>
-          <td class="amount">{{ money(p.used) }}</td>
-          <td class="amount">{{ money(p.remaining) }}</td>
+          <td class="amount"><AnimatedValue :value="money(p.limit)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.used)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.remaining)" /></td>
         </tr>
       </tbody>
     </table>

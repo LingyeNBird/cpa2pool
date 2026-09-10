@@ -15,7 +15,7 @@
 .summary-stats > div + div {
   border-left: 1px solid #b6c7aa;
 }
-.summary-stats span {
+.summary-stats > div > span {
   font-size: 0.85rem;
 }
 .summary-stats strong {

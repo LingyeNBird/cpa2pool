@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnimatedValue from './components/AnimatedValue.vue';
 import { computed, onMounted, ref } from 'vue';
 import type { Participant, Bill, Period, Audit, Stat, Page, Quota } from '../types';
 import { api, act, money, busy } from '../api';
@@ -107,13 +108,11 @@ onMounted(() =>
         ><BillsTable v-if="tab === 'bills'" :bills="bills" :names="names" /><AuditsTable
           v-else-if="tab === 'audits'"
           :audits="audits"
-          :names="names"
-        /><PeriodsTable
+          :names="names" /><PeriodsTable
           v-else-if="tab === 'periods'"
           :periods="history"
           :names="names"
-          :quota-names="quotaNames"
-        /><template v-else>
+          :quota-names="quotaNames" /><template v-else>
           <SelectField
             v-model="group"
             class="stats-group"
@@ -123,8 +122,7 @@ onMounted(() =>
               { value: 'participant', label: '按参与者' },
               { value: 'day', label: '按日期' },
             ]"
-            @change="act(load)"
-          />
+            @change="act(load)" />
           <div v-if="!stats.length" class="empty">暂无消费</div>
           <div v-else class="table-wrap table-list table-list-inset">
             <table class="table">
@@ -141,22 +139,20 @@ onMounted(() =>
               <tbody>
                 <tr v-for="s in stats" :key="s.group">
                   <td>{{ group === 'participant' ? names[s.group] || s.group : s.group }}</td>
-                  <td>{{ s.requests }}</td>
-                  <td>{{ s.input }}</td>
-                  <td>{{ s.output }}</td>
-                  <td>{{ s.cache_read }}</td>
-                  <td class="amount">{{ money(s.cost) }}</td>
+                  <td><AnimatedValue :value="s.requests" /></td>
+                  <td><AnimatedValue :value="s.input" /></td>
+                  <td><AnimatedValue :value="s.output" /></td>
+                  <td><AnimatedValue :value="s.cache_read" /></td>
+                  <td class="amount"><AnimatedValue :value="money(s.cost)" /></td>
                 </tr>
               </tbody>
-            </table>
-          </div></template
-        ></template
-      >
+            </table></div></template
+      ></template>
       <div v-if="['bills', 'audits'].includes(tab)" class="pagination">
-        <span>{{ count }} 条</span
+        <span><AnimatedValue :value="count" /> 条</span
         ><button class="btn btn-sm" :disabled="offset === 0 || busy" @click="paginate(-20)">
           上一页</button
-        ><span>{{ Math.floor(offset / 20) + 1 }}</span
+        ><span><AnimatedValue :value="Math.floor(offset / 20) + 1" /></span
         ><button class="btn btn-sm" :disabled="offset + 20 >= count || busy" @click="paginate(20)">
           下一页
         </button>

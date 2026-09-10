@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnimatedValue from './components/AnimatedValue.vue';
 import { onMounted, ref } from 'vue';
 import { PhPlus, PhPencilSimple, PhTrash } from '@phosphor-icons/vue';
 import { api, act, busy, money } from '../api';
@@ -69,16 +70,17 @@ onMounted(() => act(load));
               <td>
                 <strong>{{ p.model }}</strong>
               </td>
-              <td class="amount">{{ money(p.input) }}</td>
-              <td class="amount">{{ money(p.output) }}</td>
-              <td class="amount">{{ money(p.cache_read) }}</td>
-              <td class="amount">{{ money(p.cache_write) }}</td>
+              <td class="amount"><AnimatedValue :value="money(p.input)" /></td>
+              <td class="amount"><AnimatedValue :value="money(p.output)" /></td>
+              <td class="amount"><AnimatedValue :value="money(p.cache_read)" /></td>
+              <td class="amount"><AnimatedValue :value="money(p.cache_write)" /></td>
               <td>
                 <div class="row-actions">
                   <span v-if="p.priority_enabled" class="badge"
-                    >FAST ×{{ p.priority_multiplier }}</span
+                    >FAST ×<AnimatedValue :value="p.priority_multiplier" /></span
                   ><span v-if="p.long_enabled" class="badge">长上下文</span
-                  ><span v-if="p.model_enabled" class="badge">模型 ×{{ p.model_multiplier }}</span
+                  ><span v-if="p.model_enabled" class="badge"
+                    >模型 ×<AnimatedValue :value="p.model_multiplier" /></span
                   ><span v-if="!p.priority_enabled && !p.long_enabled && !p.model_enabled">无</span>
                 </div>
               </td>

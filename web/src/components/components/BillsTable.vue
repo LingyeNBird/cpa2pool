@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnimatedValue from './AnimatedValue.vue';
 import { ref } from 'vue';
 import type { Bill } from '../../types';
 import { money, date } from '../../api';
@@ -26,9 +27,11 @@ const selected = ref<Bill | null>(null);
           <td>{{ date(b.time) }}</td>
           <td>{{ names[b.participant_id] || b.participant_id }}</td>
           <td>{{ b.model }}</td>
-          <td>{{ b.usage.input }} / {{ b.usage.output }}</td>
-          <td>{{ b.usage.cache_read }}</td>
-          <td class="amount">{{ money(b.charge.final) }}</td>
+          <td>
+            <AnimatedValue :value="b.usage.input" /> / <AnimatedValue :value="b.usage.output" />
+          </td>
+          <td><AnimatedValue :value="b.usage.cache_read" /></td>
+          <td class="amount"><AnimatedValue :value="money(b.charge.final)" /></td>
           <td><button class="btn btn-sm" @click="selected = b">查看</button></td>
         </tr>
       </tbody>

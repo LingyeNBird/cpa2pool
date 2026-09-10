@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AnimatedValue from '../AnimatedValue.vue';
 import { ref } from 'vue';
 import type { QuotaView } from '../../../types';
 import { api, busy, money } from '../../../api';
@@ -44,7 +45,7 @@ async function save() {
       <div v-if="error" class="alert alert-error error-bar">{{ error }}</div>
       <div class="section-heading">
         <h3>{{ quota.name }}</h3>
-        <span class="amount">{{ money(quota.current.remaining) }}</span>
+        <span class="amount"><AnimatedValue :value="money(quota.current.remaining)" /></span>
       </div>
       <div class="form-grid">
         <SelectField
