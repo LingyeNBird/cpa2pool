@@ -36,16 +36,16 @@ const catalogError = ref('');
 const modelOptions = computed(() =>
   catalog.value.map((item) => ({
     value: item.id,
-    label: item.hasPrice ? item.id : `${item.id} · models.dev 暂无价格`,
+    label:
+      item.source === 'models.dev'
+        ? item.id
+        : `${item.id} · ${item.source === 'sub2api' ? 'Sub2API 价格' : 'Sub2API 回退价格'}`,
   })),
 );
 function applyCatalogPrice() {
   const item = catalog.value.find((candidate) => candidate.id === draft.model);
   if (!item) return;
-  draft.input = item.input;
-  draft.output = item.output;
-  draft.cache_read = item.cacheRead;
-  draft.cache_write = item.cacheWrite;
+  Object.assign(draft, item.price);
 }
 async function loadCatalog() {
   if (props.price) return;
@@ -102,7 +102,7 @@ const rates = [
           v-model="draft.model"
           class="full-width"
           label="模型"
-          tip="来自 CPA 当前所有渠道的可用模型；选择后自动填入 models.dev 默认价格。"
+          tip="来自 CPA 当前所有渠道的可用模型；优先使用 models.dev，缺失时采用 Sub2API 价格与回退规则。"
           :options="modelOptions"
           :disabled="loadingCatalog"
           @change="applyCatalogPrice"

@@ -358,6 +358,53 @@
         "description": "保留历史快照，未配置价格的实际模型不允许新的上游执行。"
       }
     },
+    "/prices/sync-defaults": {
+      "post": {
+        "summary": "补充缺失的默认模型价格",
+        "operationId": "post_prices_sync_defaults",
+        "description": "仅插入尚未配置的模型价格，已保存的人工价格不会被覆盖。",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PriceInput"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "同步后的完整模型价格",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Price"
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "参数无效或操作失败"
+          },
+          "401": {
+            "description": "管理密钥缺失或错误"
+          }
+        }
+      }
+    },
     "/quotas": {
       "post": {
         "summary": "保存额度",

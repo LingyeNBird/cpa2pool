@@ -7,15 +7,28 @@ import type { Price } from '../types';
 import PriceEditor from './components/PriceEditor.vue';
 import DialogFrame from './components/DialogFrame.vue';
 import FieldLabel from './components/FieldLabel.vue';
+import { loadModelCatalog } from '../modelCatalog';
 const prices = ref<Price[]>([]);
 const editing = ref<Price | null>(null);
 const showEditor = ref(false);
 const removing = ref<Price | null>(null);
 const loading = ref(true);
+const catalogError = ref('');
 async function load() {
   loading.value = true;
+  catalogError.value = '';
   try {
     prices.value = await api<Price[]>('prices');
+    try {
+      const catalog = await loadModelCatalog();
+      prices.value = await api<Price[]>(
+        'prices/sync-defaults',
+        'POST',
+        catalog.map((item) => item.price),
+      );
+    } catch (e) {
+      catalogError.value = e instanceof Error ? e.message : String(e);
+    }
   } finally {
     loading.value = false;
   }
@@ -50,6 +63,7 @@ onMounted(() => act(load));
       </button>
     </div>
     <div class="panel">
+      <div v-if="catalogError" class="alert">{{ catalogError }}</div>
       <div v-if="loading" class="empty">读取中</div>
       <div v-else-if="!prices.length" class="empty">添加模型价格后可开始计费</div>
       <div v-else class="table-wrap table-list table-list-inset">

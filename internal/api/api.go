@@ -48,6 +48,7 @@ func Routes() []Route {
 	}
 	out = append(out, Route{"POST", Prefix + "/adjustments"})
 	out = append(out, Route{"POST", Prefix + "/participant-key-candidates"})
+	out = append(out, Route{"POST", Prefix + "/prices/sync-defaults"})
 	for _, path := range []string{"status", "bills", "stats", "periods", "audits"} {
 		out = append(out, Route{"GET", Prefix + "/" + path})
 	}
@@ -134,6 +135,12 @@ func (a API) dispatch(r Request) (any, error) {
 		return nil, ps.Delete(r.Query.Get("id"))
 	case "GET /prices":
 		return prices.List()
+	case "POST /prices/sync-defaults":
+		v, e := decode[[]domain.Price](r.Body)
+		if e != nil {
+			return nil, e
+		}
+		return prices.SyncDefaults(v)
 	case "POST /prices", "PUT /prices":
 		v, e := decode[domain.Price](r.Body)
 		if e != nil {

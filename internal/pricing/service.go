@@ -16,18 +16,25 @@ func (s Service) List() ([]domain.Price, error) {
 func Get(q store.Query, model string) (domain.Price, error) {
 	return store.One[domain.Price](q, "SELECT body FROM prices WHERE model=?", model)
 }
-func (s Service) Save(p domain.Price) (domain.Price, error) {
+func validate(p domain.Price) error {
 	if p.Model == "" {
-		return p, errors.New("请输入模型名称")
+		return errors.New("请输入模型名称")
 	}
 	if p.Input < 0 || p.Output < 0 || p.CacheRead < 0 || p.CacheWrite < 0 {
-		return p, errors.New("单价不能为负")
+		return errors.New("单价不能为负")
 	}
 	if p.Combination != "multiply" && p.Combination != "max" {
-		return p, errors.New("倍率组合应为 multiply 或 max")
+		return errors.New("倍率组合应为 multiply 或 max")
 	}
 	if p.PriorityEnabled && !p.PriorityMultiplier.IsPositive() || p.LongEnabled && (p.LongThreshold < 0 || !p.LongInputMultiplier.IsPositive() || !p.LongOutputMultiplier.IsPositive()) || p.ModelEnabled && !p.ModelMultiplier.IsPositive() {
-		return p, errors.New("启用的倍率必须大于零")
+		return errors.New("启用的倍率必须大于零")
+	}
+	return nil
+}
+
+func (s Service) Save(p domain.Price) (domain.Price, error) {
+	if err := validate(p); err != nil {
+		return p, err
 	}
 	p.UpdatedAt = domain.Now()
 	err := s.Store.Tx(func(tx *sql.Tx) error {
@@ -43,6 +50,38 @@ func (s Service) Save(p domain.Price) (domain.Price, error) {
 	})
 	return p, err
 }
+func (s Service) SyncDefaults(defaults []domain.Price) ([]domain.Price, error) {
+	now := domain.Now()
+	added := make([]domain.Price, 0, len(defaults))
+	err := s.Store.Tx(func(tx *sql.Tx) error {
+		for _, p := range defaults {
+			if err := validate(p); err != nil {
+				return err
+			}
+			p.UpdatedAt = now
+			result, err := tx.Exec("INSERT OR IGNORE INTO prices VALUES(?,?)", p.Model, store.JSON(p))
+			if err != nil {
+				return err
+			}
+			count, err := result.RowsAffected()
+			if err != nil {
+				return err
+			}
+			if count > 0 {
+				added = append(added, p)
+			}
+		}
+		if len(added) == 0 {
+			return nil
+		}
+		return store.Audit(tx, "", "", "price.sync_defaults", "", nil, added)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return s.List()
+}
+
 func (s Service) Delete(model string) error {
 	return s.Store.Tx(func(tx *sql.Tx) error {
 		p, e := Get(tx, model)
