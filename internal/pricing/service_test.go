@@ -22,6 +22,10 @@ func TestSyncDefaultsAddsMissingPricesWithoutOverwritingSavedPrices(t *testing.T
 	if _, err = db.DB.Exec("INSERT INTO prices VALUES(?,?)", legacyImage.Model, store.JSON(legacyImage)); err != nil {
 		t.Fatal(err)
 	}
+	legacyVideo := domain.Price{Model: "legacy-video", Input: 11, Output: 12, Combination: "multiply"}
+	if _, err = service.Save(legacyVideo); err != nil {
+		t.Fatal(err)
+	}
 
 	prices, err := service.SyncDefaults([]domain.Price{
 		{Model: "custom", Input: 1, Output: 2, Combination: "multiply"},
@@ -31,12 +35,16 @@ func TestSyncDefaultsAddsMissingPricesWithoutOverwritingSavedPrices(t *testing.T
 			ImagePrice1K: 134_000_000, ImagePrice2K: 201_000_000, ImagePrice4K: 268_000_000,
 			Combination: "multiply",
 		},
+		{
+			Model: "legacy-video", VideoPrice720p: 100_000_000,
+			Combination: "multiply",
+		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(prices) != 3 {
-		t.Fatalf("SyncDefaults() returned %d prices, want 3", len(prices))
+	if len(prices) != 4 {
+		t.Fatalf("SyncDefaults() returned %d prices, want 4", len(prices))
 	}
 	custom, err := Get(db.DB, "custom")
 	if err != nil {
@@ -61,5 +69,15 @@ func TestSyncDefaultsAddsMissingPricesWithoutOverwritingSavedPrices(t *testing.T
 	}
 	if upgraded.Input != 7 || upgraded.Output != 8 {
 		t.Fatalf("legacy token prices were overwritten: input=%v output=%v", upgraded.Input, upgraded.Output)
+	}
+	upgradedVideo, err := Get(db.DB, "legacy-video")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if upgradedVideo.VideoPrice720p != 100_000_000 {
+		t.Fatalf("legacy video price was not upgraded: %+v", upgradedVideo)
+	}
+	if upgradedVideo.Input != 11 || upgradedVideo.Output != 12 {
+		t.Fatalf("legacy video token prices were overwritten: input=%v output=%v", upgradedVideo.Input, upgradedVideo.Output)
 	}
 }

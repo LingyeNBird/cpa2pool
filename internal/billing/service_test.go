@@ -72,3 +72,60 @@ func TestImageRequestChargesPerSuccessfulImageExactlyOnce(t *testing.T) {
 		t.Fatalf("combined image bill = %d cost = %d, want 1 and 269000000", billCount, cost)
 	}
 }
+
+func TestVideoRequestChargesSecondsOnceAndIgnoresRetrieval(t *testing.T) {
+	if video, _, _ := VideoPolicy([]byte(`{"request_id":"video_123"}`), "sora-2"); video {
+		t.Fatal("video retrieval must not be classified as a generation")
+	}
+	db, err := store.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.DB.Close()
+	key := "video-test-key"
+	person, err := (participant.Service{Store: db}).Save(participant.Input{
+		Participant: domain.Participant{Name: "video user", Enabled: true},
+		APIKey:      key,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = (quota.Service{Store: db}).Save(domain.Quota{
+		ParticipantID: person.ID,
+		Name:          "video quota",
+		Limit:         10_000_000_000,
+		Period:        "none",
+		Enabled:       true,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = (pricing.Service{Store: db}).Save(domain.Price{
+		Model:          "sora-2",
+		VideoPrice720p: 100_000_000,
+		Combination:    "multiply",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	service := New(db)
+	body := []byte(`{"model":"sora-2","prompt":"a bird in flight","seconds":"6","resolution":"720p"}`)
+	if err = service.Before("video-1", participant.Scope(key), "sora-2", body); err != nil {
+		t.Fatal(err)
+	}
+	if err = service.After("video-1", "sora-2"); err != nil {
+		t.Fatal(err)
+	}
+	if err = service.Response("video-1", []byte(`{"id":"video_123","status":"queued"}`), false); err != nil {
+		t.Fatal(err)
+	}
+	if err = service.Complete("video-1", true); err != nil {
+		t.Fatal(err)
+	}
+	var billCount int
+	var cost int64
+	if err = db.DB.QueryRow("SELECT count(*),sum(cost) FROM bills").Scan(&billCount, &cost); err != nil {
+		t.Fatal(err)
+	}
+	if billCount != 1 || cost != 600_000_000 {
+		t.Fatalf("video bills = %d cost = %d, want 1 and 600000000", billCount, cost)
+	}
+}

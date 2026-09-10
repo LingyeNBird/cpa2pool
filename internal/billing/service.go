@@ -14,17 +14,20 @@ import (
 )
 
 type Pending struct {
-	ParticipantID  string
-	RequestedModel string
-	Model          string
-	Effort         string
-	Tier           string
-	Prices         map[string]domain.Price
-	Meter          Meter
-	Charged        bool
-	Image          bool
-	ImageSize      string
-	ImageCount     int64
+	ParticipantID   string
+	RequestedModel  string
+	Model           string
+	Effort          string
+	Tier            string
+	Prices          map[string]domain.Price
+	Meter           Meter
+	Charged         bool
+	Image           bool
+	ImageSize       string
+	ImageCount      int64
+	Video           bool
+	VideoSeconds    int64
+	VideoResolution string
 }
 type Service struct {
 	Store   *store.Store
@@ -55,6 +58,7 @@ func (s *Service) Before(id, scope, model string, body []byte) error {
 	}
 	requested, effort, tier := RequestPolicy(body, model)
 	image, imageSize, imageCount, imageModel := ImagePolicy(body, requested)
+	video, videoSeconds, videoResolution := VideoPolicy(body, requested)
 	if image {
 		requested = imageModel
 	}
@@ -97,6 +101,7 @@ func (s *Service) Before(id, scope, model string, body []byte) error {
 	s.pending[id] = &Pending{
 		ParticipantID: p.ID, RequestedModel: requested, Model: requested, Effort: effort, Tier: tier,
 		Prices: catalog, Image: image, ImageSize: imageSize, ImageCount: imageCount,
+		Video: video, VideoSeconds: videoSeconds, VideoResolution: videoResolution,
 	}
 	return nil
 }
@@ -107,7 +112,7 @@ func (s *Service) After(id, model string) error {
 	if p == nil {
 		return &Denial{403, "request_not_admitted"}
 	}
-	if p.Image {
+	if p.Image || p.Video {
 		model = p.Model
 	} else {
 		model, _, _ = RequestPolicy(nil, model)
@@ -117,6 +122,9 @@ func (s *Service) After(id, model string) error {
 	}
 	if p.Image && normalizePriceMode(p.Prices[model]) != "image" {
 		return &Denial{403, "image_price_missing:" + model}
+	}
+	if p.Video && pricing.VideoUnitPrice(p.Prices[model], p.VideoResolution) == 0 {
+		return &Denial{403, "video_resolution_price_missing:" + model + ":" + p.VideoResolution}
 	}
 	p.Model = model
 	return nil
@@ -149,7 +157,7 @@ func (s *Service) Complete(id string, succeeded bool) error {
 	}
 	defer delete(s.pending, id)
 	p.Meter.Flush()
-	if p.Image {
+	if p.Image || p.Video {
 		if !succeeded || p.Charged {
 			return nil
 		}
@@ -161,11 +169,11 @@ func (s *Service) Complete(id string, succeeded bool) error {
 	return s.charge(id, p)
 }
 func (s *Service) charge(id string, p *Pending) error {
-	if !p.Image && !p.Meter.Seen {
+	if !p.Image && !p.Video && !p.Meter.Seen {
 		return errors.New("上游未返回 Token 用量，无法计费")
 	}
 	model := p.Model
-	if !p.Image && p.Meter.Model != "" {
+	if !p.Image && !p.Video && p.Meter.Model != "" {
 		model = p.Meter.Model
 	}
 	price, ok := p.Prices[model]
@@ -184,6 +192,13 @@ func (s *Service) charge(id string, p *Pending) error {
 		imageCharge := pricing.CalculateImage(price, p.ImageCount, p.ImageSize)
 		charge.Base += imageCharge.Base
 		charge.Final += imageCharge.Final
+	}
+	if p.Video {
+		usage.VideoSeconds = p.VideoSeconds
+		usage.VideoResolution = p.VideoResolution
+		videoCharge := pricing.CalculateVideo(price, p.VideoSeconds, p.VideoResolution)
+		charge.Base += videoCharge.Base
+		charge.Final += videoCharge.Final
 	}
 	bill := domain.Bill{ID: domain.ID(), RequestID: id, ParticipantID: p.ParticipantID, Model: model, RequestedModel: p.RequestedModel, Effort: p.Effort, ServiceTier: tier, Time: domain.Now(), Usage: usage, Charge: charge}
 	err := s.Store.Tx(func(tx *sql.Tx) error {

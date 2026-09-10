@@ -202,6 +202,26 @@ function withImagePricing(model: string, price: Price, pricing?: Sub2APIPrice): 
   };
 }
 
+function withVideoPricing(model: string, price: Price): Price {
+  const normalized = normalizeModel(model);
+  const rates: Record<string, [number, number, number, number]> = {
+    'sora-2': [0, 0.1, 0, 0],
+    'sora-2-pro': [0, 0.3, 0.5, 0.7],
+    'grok-imagine-video': [0.05, 0.05, 0.05, 0.05],
+    'grok-imagine-video-1.5': [0.08, 0.08, 0.08, 0.08],
+    'grok-imagine-video-1.5-preview': [0.08, 0.08, 0.08, 0.08],
+  };
+  const rate = rates[normalized];
+  if (!rate) return price;
+  return {
+    ...price,
+    video_price_480p: String(rate[0]),
+    video_price_720p: String(rate[1]),
+    video_price_1024p: String(rate[2]),
+    video_price_1080p: String(rate[3]),
+  };
+}
+
 function defaultPrice(
   model: string,
   values: {
@@ -224,6 +244,10 @@ function defaultPrice(
     image_price_1k: '0',
     image_price_2k: '0',
     image_price_4k: '0',
+    video_price_480p: '0',
+    video_price_720p: '0',
+    video_price_1024p: '0',
+    video_price_1080p: '0',
     model,
     input: String(values.input ?? 0),
     output: String(values.output ?? 0),
@@ -363,6 +387,15 @@ export async function loadModelCatalog(): Promise<ModelCatalogItem[]> {
     const owner = typeof model.owned_by === 'string' ? model.owned_by : '';
     if (!supported.has(id)) supported.set(id, owner);
   }
+  for (const [id, owner] of [
+    ['sora-2', 'openai'],
+    ['sora-2-pro', 'openai'],
+    ['grok-imagine-video', 'xai'],
+    ['grok-imagine-video-1.5', 'xai'],
+    ['grok-imagine-video-1.5-preview', 'xai'],
+  ] as const) {
+    if (!supported.has(id)) supported.set(id, owner);
+  }
 
   return [...supported]
     .sort(([left], [right]) => left.localeCompare(right, undefined, { sensitivity: 'base' }))
@@ -381,18 +414,18 @@ export async function loadModelCatalog(): Promise<ModelCatalogItem[]> {
       if (exact)
         return {
           id,
-          price: withImagePricing(id, priceFromModelsDev(id, exact.cost), fallback?.value),
+          price: withVideoPricing(id, withImagePricing(id, priceFromModelsDev(id, exact.cost), fallback?.value)),
           source: 'models.dev' as const,
         };
       if (fallback)
         return {
           id,
-          price: withImagePricing(id, priceFromSub2API(id, fallback.value), fallback.value),
+          price: withVideoPricing(id, withImagePricing(id, priceFromSub2API(id, fallback.value), fallback.value)),
           source: fallback.exact ? ('sub2api' as const) : ('sub2api-fallback' as const),
         };
       return {
         id,
-        price: withImagePricing(id, defaultPrice(id, {})),
+        price: withVideoPricing(id, withImagePricing(id, defaultPrice(id, {}))),
         source: 'sub2api-fallback' as const,
       };
     });

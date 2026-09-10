@@ -28,7 +28,8 @@ func validate(p domain.Price) error {
 		return errors.New("请输入模型名称")
 	}
 	if p.Input < 0 || p.Output < 0 || p.CacheRead < 0 || p.CacheWrite < 0 ||
-		p.ImagePrice1K < 0 || p.ImagePrice2K < 0 || p.ImagePrice4K < 0 {
+		p.ImagePrice1K < 0 || p.ImagePrice2K < 0 || p.ImagePrice4K < 0 ||
+		p.VideoPrice480p < 0 || p.VideoPrice720p < 0 || p.VideoPrice1024p < 0 || p.VideoPrice1080p < 0 {
 		return errors.New("单价不能为负")
 	}
 	if p.BillingMode != "token" && p.BillingMode != "image" {
@@ -74,14 +75,28 @@ func (s Service) SyncDefaults(defaults []domain.Price) ([]domain.Price, error) {
 			p.UpdatedAt = now
 			old, err := Get(tx, p.Model)
 			if err == nil {
-				if p.BillingMode != "image" || old.BillingMode != "" ||
-					old.ImagePrice1K != 0 || old.ImagePrice2K != 0 || old.ImagePrice4K != 0 {
+				updated := false
+				if p.BillingMode == "image" && old.BillingMode == "" &&
+					old.ImagePrice1K == 0 && old.ImagePrice2K == 0 && old.ImagePrice4K == 0 {
+					old.BillingMode = "image"
+					old.ImagePrice1K = p.ImagePrice1K
+					old.ImagePrice2K = p.ImagePrice2K
+					old.ImagePrice4K = p.ImagePrice4K
+					updated = true
+				}
+				if old.VideoPrice480p == 0 && old.VideoPrice720p == 0 &&
+					old.VideoPrice1024p == 0 && old.VideoPrice1080p == 0 &&
+					(p.VideoPrice480p != 0 || p.VideoPrice720p != 0 ||
+						p.VideoPrice1024p != 0 || p.VideoPrice1080p != 0) {
+					old.VideoPrice480p = p.VideoPrice480p
+					old.VideoPrice720p = p.VideoPrice720p
+					old.VideoPrice1024p = p.VideoPrice1024p
+					old.VideoPrice1080p = p.VideoPrice1080p
+					updated = true
+				}
+				if !updated {
 					continue
 				}
-				old.BillingMode = "image"
-				old.ImagePrice1K = p.ImagePrice1K
-				old.ImagePrice2K = p.ImagePrice2K
-				old.ImagePrice4K = p.ImagePrice4K
 				old.UpdatedAt = now
 				if _, err = tx.Exec("UPDATE prices SET body=? WHERE model=?", store.JSON(old), old.Model); err != nil {
 					return err
@@ -165,6 +180,36 @@ func CalculateImage(p domain.Price, count int64, size string) domain.Charge {
 		unit = p.ImagePrice4K
 	}
 	base := decimal.NewFromInt(int64(unit)).Mul(decimal.NewFromInt(count))
+	final := base
+	factors := []domain.Factor{}
+	if p.ModelEnabled {
+		final = final.Mul(p.ModelMultiplier)
+		factors = append(factors, domain.Factor{Name: "model", Input: p.ModelMultiplier, Output: p.ModelMultiplier})
+	}
+	return domain.Charge{
+		Base:    domain.Money(base.Round(0).IntPart()),
+		Final:   domain.Money(final.Round(0).IntPart()),
+		Factors: factors,
+		Price:   p,
+	}
+}
+
+func VideoUnitPrice(p domain.Price, resolution string) domain.Money {
+	switch resolution {
+	case "480p":
+		return p.VideoPrice480p
+	case "1024p":
+		return p.VideoPrice1024p
+	case "1080p":
+		return p.VideoPrice1080p
+	default:
+		return p.VideoPrice720p
+	}
+}
+
+func CalculateVideo(p domain.Price, seconds int64, resolution string) domain.Charge {
+	unit := VideoUnitPrice(p, resolution)
+	base := decimal.NewFromInt(int64(unit)).Mul(decimal.NewFromInt(seconds))
 	final := base
 	factors := []domain.Factor{}
 	if p.ModelEnabled {

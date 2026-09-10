@@ -90,19 +90,25 @@ type Status struct {
 	Quotas    []QuotaView `json:"quotas"`
 }
 type Usage struct {
-	Input      int64  `json:"input"`
-	Output     int64  `json:"output"`
-	CacheRead  int64  `json:"cache_read"`
-	CacheWrite int64  `json:"cache_write"`
-	Reasoning  int64  `json:"reasoning"`
-	Images     int64  `json:"images"`
-	ImageSize  string `json:"image_size"`
+	Input           int64  `json:"input"`
+	Output          int64  `json:"output"`
+	CacheRead       int64  `json:"cache_read"`
+	CacheWrite      int64  `json:"cache_write"`
+	Reasoning       int64  `json:"reasoning"`
+	Images          int64  `json:"images"`
+	ImageSize       string `json:"image_size"`
+	VideoSeconds    int64  `json:"video_seconds"`
+	VideoResolution string `json:"video_resolution"`
 }
 type Price struct {
 	BillingMode          string          `json:"billing_mode"`
 	ImagePrice1K         Money           `json:"image_price_1k"`
 	ImagePrice2K         Money           `json:"image_price_2k"`
 	ImagePrice4K         Money           `json:"image_price_4k"`
+	VideoPrice480p       Money           `json:"video_price_480p"`
+	VideoPrice720p       Money           `json:"video_price_720p"`
+	VideoPrice1024p      Money           `json:"video_price_1024p"`
+	VideoPrice1080p      Money           `json:"video_price_1080p"`
 	Model                string          `json:"model"`
 	Input                Money           `json:"input"`
 	Output               Money           `json:"output"`

@@ -1073,6 +1073,18 @@
           "image_price_4k": {
             "$ref": "#/components/schemas/Money"
           },
+          "video_price_480p": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "video_price_720p": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "video_price_1024p": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "video_price_1080p": {
+            "$ref": "#/components/schemas/Money"
+          },
           "input": {
             "$ref": "#/components/schemas/Money"
           },
@@ -1157,6 +1169,18 @@
             "$ref": "#/components/schemas/Money"
           },
           "image_price_4k": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "video_price_480p": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "video_price_720p": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "video_price_1024p": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "video_price_1080p": {
             "$ref": "#/components/schemas/Money"
           },
           "input": {
@@ -1485,6 +1509,13 @@
           "image_size": {
             "type": "string",
             "enum": ["", "1K", "2K", "4K"]
+          },
+          "video_seconds": {
+            "type": "integer"
+          },
+          "video_resolution": {
+            "type": "string",
+            "enum": ["", "480p", "720p", "1024p", "1080p"]
           }
         },
         "required": [
@@ -1494,7 +1525,9 @@
           "cache_write",
           "reasoning",
           "images",
-          "image_size"
+          "image_size",
+          "video_seconds",
+          "video_resolution"
         ]
       },
       "Factor": {

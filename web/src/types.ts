@@ -51,6 +51,10 @@ export interface Price {
   image_price_1k: string;
   image_price_2k: string;
   image_price_4k: string;
+  video_price_480p: string;
+  video_price_720p: string;
+  video_price_1024p: string;
+  video_price_1080p: string;
   input: string;
   output: string;
   cache_read: string;
@@ -74,6 +78,8 @@ export interface Usage {
   reasoning: number;
   images: number;
   image_size: string;
+  video_seconds: number;
+  video_resolution: string;
 }
 export interface Bill {
   id: string;

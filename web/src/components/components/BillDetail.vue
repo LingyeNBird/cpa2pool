@@ -81,6 +81,26 @@ const factors: Record<string, string> = {
               / 张
             </td>
           </tr>
+          <tr v-if="bill.usage.video_seconds">
+            <td>生成视频（{{ bill.usage.video_resolution }}）</td>
+            <td><AnimatedValue :value="bill.usage.video_seconds" /> 秒</td>
+            <td>
+              <AnimatedValue
+                :value="
+                  money(
+                    bill.usage.video_resolution === '480p'
+                      ? bill.charge.price.video_price_480p
+                      : bill.usage.video_resolution === '1024p'
+                        ? bill.charge.price.video_price_1024p
+                        : bill.usage.video_resolution === '1080p'
+                          ? bill.charge.price.video_price_1080p
+                          : bill.charge.price.video_price_720p,
+                  )
+                "
+              />
+              / 秒
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>

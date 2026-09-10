@@ -13,9 +13,18 @@ const prices = ref<Price[]>([]);
 const editing = ref<Price | null>(null);
 const showEditor = ref(false);
 const removing = ref<Price | null>(null);
-const activeTable = ref<'token' | 'image'>('token');
-const editingMode = ref<'token' | 'image'>('token');
+const activeTable = ref<'token' | 'image' | 'video'>('token');
+const editingMode = ref<'token' | 'image' | 'video'>('token');
 const imagePrices = computed(() => prices.value.filter((price) => price.billing_mode === 'image'));
+const videoPrices = computed(() =>
+  prices.value.filter(
+    (price) =>
+      Number(price.video_price_480p) ||
+      Number(price.video_price_720p) ||
+      Number(price.video_price_1024p) ||
+      Number(price.video_price_1080p),
+  ),
+);
 const loading = ref(true);
 const catalogError = ref('');
 async function load() {
@@ -83,6 +92,13 @@ onMounted(() => act(load));
         >
           图片生成计费
         </button>
+        <button
+          class="btn btn-sm"
+          :class="activeTable === 'video' ? 'btn-primary' : 'btn-ghost'"
+          @click="activeTable = 'video'"
+        >
+          视频生成计费
+        </button>
       </div>
       <div v-if="catalogError" class="alert">{{ catalogError }}</div>
       <div v-if="loading" class="empty">读取中</div>
@@ -144,7 +160,10 @@ onMounted(() => act(load));
           </tbody>
         </table>
       </div>
-      <div v-else-if="imagePrices.length" class="table-wrap table-list table-list-inset">
+      <div
+        v-else-if="activeTable === 'image' && imagePrices.length"
+        class="table-wrap table-list table-list-inset"
+      >
         <table class="table">
           <thead>
             <tr>
@@ -184,7 +203,52 @@ onMounted(() => act(load));
           </tbody>
         </table>
       </div>
-      <div v-else class="empty">当前模型目录没有图片生成模型</div>
+      <div
+        v-else-if="activeTable === 'video' && videoPrices.length"
+        class="table-wrap table-list table-list-inset"
+      >
+        <table class="table">
+          <thead>
+            <tr>
+              <th>模型</th>
+              <th>480p / 秒</th>
+              <th>720p / 秒</th>
+              <th>1024p / 秒</th>
+              <th>1080p / 秒</th>
+              <th>模型倍率</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in videoPrices" :key="p.model">
+              <td><strong>{{ p.model }}</strong></td>
+              <td class="amount"><AnimatedValue :value="money(p.video_price_480p)" /></td>
+              <td class="amount"><AnimatedValue :value="money(p.video_price_720p)" /></td>
+              <td class="amount"><AnimatedValue :value="money(p.video_price_1024p)" /></td>
+              <td class="amount"><AnimatedValue :value="money(p.video_price_1080p)" /></td>
+              <td>
+                <span v-if="p.model_enabled">×<AnimatedValue :value="p.model_multiplier" /></span>
+                <span v-else>无</span>
+              </td>
+              <td>
+                <button
+                  class="btn btn-sm"
+                  @click="
+                    editing = p;
+                    editingMode = 'video';
+                    showEditor = true;
+                  "
+                >
+                  <PhPencilSimple :size="16" />编辑
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else class="empty">
+        当前模型目录没有{{ activeTable === 'video' ? '视频' : '图片' }}生成模型
+      </div>
     </div>
     <PriceEditor
       v-if="showEditor"

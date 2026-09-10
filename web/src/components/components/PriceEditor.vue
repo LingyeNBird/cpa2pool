@@ -8,7 +8,7 @@ import NumberField from './NumberField.vue';
 import BinaryChoiceField from './components/BinaryChoiceField.vue';
 import SelectField from './SelectField.vue';
 import { loadModelCatalog, type ModelCatalogItem } from '../../modelCatalog';
-const props = defineProps<{ price: Price | null; mode?: 'token' | 'image' }>();
+const props = defineProps<{ price: Price | null; mode?: 'token' | 'image' | 'video' }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const draft = reactive<Price>(
   props.price
@@ -18,6 +18,10 @@ const draft = reactive<Price>(
         image_price_1k: props.price.image_price_1k || '0',
         image_price_2k: props.price.image_price_2k || '0',
         image_price_4k: props.price.image_price_4k || '0',
+        video_price_480p: props.price.video_price_480p || '0',
+        video_price_720p: props.price.video_price_720p || '0',
+        video_price_1024p: props.price.video_price_1024p || '0',
+        video_price_1080p: props.price.video_price_1080p || '0',
       }
     : {
         model: '',
@@ -25,6 +29,10 @@ const draft = reactive<Price>(
         image_price_1k: '0',
         image_price_2k: '0',
         image_price_4k: '0',
+        video_price_480p: '0',
+        video_price_720p: '0',
+        video_price_1024p: '0',
+        video_price_1080p: '0',
         input: '0',
         output: '0',
         cache_read: '0',
@@ -98,7 +106,15 @@ const rates = [
 </script>
 <template>
   <DialogFrame
-    :title="price ? (mode === 'image' ? '编辑图片计费' : '编辑 Token 计费') : '添加模型'"
+    :title="
+      price
+        ? mode === 'image'
+          ? '编辑图片计费'
+          : mode === 'video'
+            ? '编辑视频计费'
+            : '编辑 Token 计费'
+        : '添加模型'
+    "
     @close="emit('close')"
     ><form @submit.prevent="save">
       <div v-if="error" class="alert alert-error error-bar">{{ error }}</div>
@@ -145,6 +161,12 @@ const rates = [
             min="0"
             required
           />
+        </template>
+        <template v-else-if="mode === 'video'">
+          <NumberField v-model="draft.video_price_480p" label="480p 每秒价格" tip="USD / 秒。" min="0" required />
+          <NumberField v-model="draft.video_price_720p" label="720p 每秒价格" tip="USD / 秒。" min="0" required />
+          <NumberField v-model="draft.video_price_1024p" label="1024p 每秒价格" tip="USD / 秒。" min="0" required />
+          <NumberField v-model="draft.video_price_1080p" label="1080p 每秒价格" tip="USD / 秒。" min="0" required />
         </template>
         <template v-else>
           <NumberField
@@ -212,7 +234,7 @@ const rates = [
           :disabled="!draft.model_enabled"
         />
         <BinaryChoiceField
-          v-if="mode !== 'image'"
+          v-if="mode !== 'image' && mode !== 'video'"
           v-model="draft.combination"
           class="full-width"
           label="组合方式"

@@ -183,6 +183,53 @@ func ImageResponseCount(body []byte) int64 {
 	return 0
 }
 
+func VideoPolicy(body []byte, model string) (bool, int64, string) {
+	var root map[string]any
+	if json.Unmarshal(body, &root) != nil {
+		return false, 0, ""
+	}
+	normalized := strings.ToLower(strings.TrimSpace(model))
+	videoModel := normalized == "sora-2" ||
+		strings.HasPrefix(normalized, "sora-2-") ||
+		normalized == "grok-imagine-video" ||
+		strings.HasPrefix(normalized, "grok-imagine-video-")
+	if !videoModel {
+		return false, 0, ""
+	}
+	if _, hasPrompt := root["prompt"]; !hasPrompt {
+		return false, 0, ""
+	}
+	seconds := int64(4)
+	switch value := root["seconds"].(type) {
+	case string:
+		if parsed, err := strconv.ParseInt(value, 10, 64); err == nil {
+			seconds = parsed
+		}
+	case float64:
+		seconds = int64(value)
+	}
+	if seconds < 1 {
+		seconds = 1
+	}
+	resolution := strings.ToLower(str(root, "resolution"))
+	if resolution == "" {
+		switch strings.ToLower(str(root, "size")) {
+		case "1024x1792", "1792x1024":
+			resolution = "1024p"
+		case "1080x1920", "1920x1080":
+			resolution = "1080p"
+		case "720x1280", "1280x720":
+			resolution = "720p"
+		}
+	}
+	switch resolution {
+	case "480p", "720p", "1024p", "1080p":
+	default:
+		resolution = "720p"
+	}
+	return true, seconds, resolution
+}
+
 func RequestPolicy(body []byte, model string) (string, string, string) {
 	var root map[string]any
 	_ = json.Unmarshal(body, &root)
