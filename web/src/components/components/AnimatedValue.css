@@ -1,13 +1,42 @@
 .animated-value {
-  position: relative;
-  display: inline-grid;
+  display: inline-flex;
+  align-items: baseline;
   vertical-align: baseline;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   isolation: isolate;
 }
+.number-place {
+  display: inline-block;
+  flex: none;
+  width: 1ch;
+  overflow: clip;
+  vertical-align: baseline;
+}
+.number-punctuation {
+  width: 0.5ch;
+}
+.number-literal {
+  width: auto;
+}
+.number-cell {
+  display: inline-grid;
+  position: relative;
+  vertical-align: baseline;
+}
 .animated-value-face {
   grid-area: 1 / 1;
+}
+.number-place-enter-active,
+.number-place-leave-active {
+  transition:
+    width 180ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.number-place-enter-from,
+.number-place-leave-to {
+  width: 0;
+  opacity: 0;
 }
 .number-swap-enter-active,
 .number-swap-leave-active {
@@ -23,13 +52,15 @@
 }
 .number-swap-enter-from {
   opacity: 0;
-  transform: translateY(0.24em);
+  transform: translateY(0.35em);
 }
 .number-swap-leave-to {
   opacity: 0;
-  transform: translateY(-0.24em);
+  transform: translateY(-0.35em);
 }
 @media (prefers-reduced-motion: reduce) {
+  .number-place-enter-active,
+  .number-place-leave-active,
   .number-swap-enter-active,
   .number-swap-leave-active {
     transition: none;
