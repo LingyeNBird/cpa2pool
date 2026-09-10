@@ -163,7 +163,7 @@ onMounted(() => act(load));
                     <PhPencilSimple :size="16" />编辑
                   </button>
                   <button
-                    class="btn btn-sm btn-ghost btn-square"
+                    class="btn btn-sm btn-square"
                     :aria-label="`删除${p.model}`"
                     @click="removing = p"
                   >

@@ -121,29 +121,33 @@ onMounted(() => act(load));
                 <div class="row-actions">
                   <button class="btn btn-sm" @click="selected = p">
                     <PhWallet :size="16" />额度</button
-                  ><button
-                    class="btn btn-ghost btn-square btn-sm"
-                    :aria-label="`编辑${p.name}`"
-                    @click="
-                      editing = p;
-                      showEditor = true;
-                    "
-                  >
-                    <PhPencilSimple :size="18" /></button
-                  ><button
-                    class="btn btn-ghost btn-square btn-sm"
-                    :disabled="busy"
-                    :aria-label="p.paused ? `恢复${p.name}` : `暂停${p.name}`"
-                    @click="pause(p)"
-                  >
-                    <PhPlay v-if="p.paused" :size="18" /><PhPause v-else :size="18" /></button
-                  ><button
-                    class="btn btn-ghost btn-square btn-sm"
-                    :aria-label="`删除${p.name}`"
-                    @click="removing = p"
-                  >
-                    <PhTrash :size="18" />
-                  </button>
+                  ><div class="participant-action-group">
+                    <button
+                      class="btn btn-square btn-sm"
+                      :aria-label="`编辑${p.name}`"
+                      @click="
+                        editing = p;
+                        showEditor = true;
+                      "
+                    >
+                      <PhPencilSimple :size="18" />
+                    </button>
+                    <button
+                      class="btn btn-square btn-sm"
+                      :disabled="busy"
+                      :aria-label="p.paused ? `恢复${p.name}` : `暂停${p.name}`"
+                      @click="pause(p)"
+                    >
+                      <PhPlay v-if="p.paused" :size="18" /><PhPause v-else :size="18" />
+                    </button>
+                    <button
+                      class="btn btn-square btn-sm"
+                      :aria-label="`删除${p.name}`"
+                      @click="removing = p"
+                    >
+                      <PhTrash :size="18" />
+                    </button>
+                  </div>
                 </div>
               </td>
             </tr>

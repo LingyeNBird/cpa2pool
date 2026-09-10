@@ -20,3 +20,29 @@
   font-size: 0.75rem;
   color: #617058;
 }
+.participant-action-group {
+  display: inline-flex;
+  isolation: isolate;
+  padding: 0 2px 2px 0;
+}
+.participant-action-group .btn {
+  position: relative;
+  z-index: 2;
+  border-radius: 0;
+  background: var(--color-base-100);
+}
+.participant-action-group .btn + .btn {
+  margin-left: -2px;
+}
+.participant-action-group .btn:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.participant-action-group .btn:last-child {
+  border-radius: 0 8px 8px 0;
+}
+.participant-action-group .btn:active:not(:disabled) {
+  z-index: 1;
+}
+.participant-action-group .btn:focus-visible {
+  z-index: 3;
+}
