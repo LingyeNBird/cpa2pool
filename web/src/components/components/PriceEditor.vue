@@ -5,7 +5,7 @@ import { api, busy } from '../../api';
 import DialogFrame from './DialogFrame.vue';
 import FieldLabel from './FieldLabel.vue';
 import NumberField from './NumberField.vue';
-import SelectField from './SelectField.vue';
+import BinaryChoiceField from './components/BinaryChoiceField.vue';
 const props = defineProps<{ price: Price | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
 const draft = reactive<Price>({
@@ -124,7 +124,7 @@ const rates = [
           min="0.000001"
           :disabled="!draft.model_enabled"
         />
-        <SelectField
+        <BinaryChoiceField
           v-model="draft.combination"
           class="full-width"
           label="组合方式"

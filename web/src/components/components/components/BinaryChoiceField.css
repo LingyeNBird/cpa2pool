@@ -1,0 +1,44 @@
+.binary-choice-field > label {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.binary-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 10px;
+  background: var(--surface-depth);
+  box-shadow: inset 3px 3px 0 #9eaf97;
+}
+.binary-choice-key {
+  min-height: 38px;
+  padding: 7px 14px;
+  border: 2px solid var(--surface-stroke);
+  border-radius: 7px;
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  box-shadow: 2px 2px 0 #879b80;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    transform 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 120ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 120ms,
+    color 120ms;
+}
+.binary-choice-key.is-selected {
+  transform: translate(2px, 2px);
+  background: var(--color-primary);
+  box-shadow: inset 2px 2px 0 #8fa783;
+  color: var(--color-primary-content);
+}
+.binary-choice-key:focus-visible {
+  outline: 2px solid var(--color-base-content);
+  outline-offset: -4px;
+}
+.binary-choice-key:not(.is-selected):active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
