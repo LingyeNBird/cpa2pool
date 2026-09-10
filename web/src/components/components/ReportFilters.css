@@ -9,6 +9,13 @@
 .report-filter-raised .select {
   box-shadow: 3px 3px 0 var(--surface-depth);
 }
+.report-filters .report-filter-raised .input:focus,
+.report-filters .report-filter-raised .select:focus,
+.report-filters .report-filter-raised .select:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px var(--color-base-content),
+    3px 3px 0 var(--surface-depth);
+}
 .report-filters > .btn {
   grid-column: 1 / -1;
   justify-self: start;
