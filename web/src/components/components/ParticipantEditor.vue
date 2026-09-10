@@ -6,6 +6,7 @@ import DialogFrame from './DialogFrame.vue';
 import FieldLabel from './FieldLabel.vue';
 import SelectField from './SelectField.vue';
 import ModelPicker from './components/ModelPicker.vue';
+import './ParticipantEditor.css';
 import DateTimeField from './DateTimeField.vue';
 const props = defineProps<{ participant: Participant | null }>();
 const emit = defineEmits<{ close: []; saved: [] }>();
@@ -138,7 +139,7 @@ async function save() {
           <FieldLabel text="API Key" tip="CPA 中没有尚未关联参与者的 API Key。" />
           <button
             type="button"
-            class="btn"
+            class="btn participant-flat-action"
             :disabled="loadingKeys || creatingKey"
             @click="createKey"
           >

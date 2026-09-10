@@ -1,0 +1,8 @@
+.btn.participant-flat-action {
+  box-shadow: none;
+}
+
+.btn.participant-flat-action:active:not(:disabled) {
+  transform: none;
+  box-shadow: inset 3px 3px 0 var(--surface-depth);
+}
