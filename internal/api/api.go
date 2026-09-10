@@ -72,6 +72,32 @@ func (a API) Handle(r Request) Response {
 	return respond(200, map[string]any{"data": data})
 }
 func decode[T any](b []byte) (T, error) { var v T; err := json.Unmarshal(b, &v); return v, err }
+func decodePricePayload[T any](b []byte) (T, error) {
+	var raw any
+	if err := json.Unmarshal(b, &raw); err != nil {
+		var zero T
+		return zero, err
+	}
+	var strip func(any)
+	strip = func(value any) {
+		switch value := value.(type) {
+		case map[string]any:
+			delete(value, "updated_at")
+		case []any:
+			for _, item := range value {
+				strip(item)
+			}
+		}
+	}
+	strip(raw)
+	clean, err := json.Marshal(raw)
+	if err != nil {
+		var zero T
+		return zero, err
+	}
+	return decode[T](clean)
+}
+
 func filter(q url.Values) (reporting.Filter, error) {
 	f := reporting.Filter{ParticipantID: q.Get("participant_id"), Model: q.Get("model"), Limit: 50}
 	for _, name := range []string{"from", "to"} {
@@ -136,13 +162,13 @@ func (a API) dispatch(r Request) (any, error) {
 	case "GET /prices":
 		return prices.List()
 	case "POST /prices/sync-defaults":
-		v, e := decode[[]domain.Price](r.Body)
+		v, e := decodePricePayload[[]domain.Price](r.Body)
 		if e != nil {
 			return nil, e
 		}
 		return prices.SyncDefaults(v)
 	case "POST /prices", "PUT /prices":
-		v, e := decode[domain.Price](r.Body)
+		v, e := decodePricePayload[domain.Price](r.Body)
 		if e != nil {
 			return nil, e
 		}
