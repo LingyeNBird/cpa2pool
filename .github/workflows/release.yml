@@ -1,0 +1,192 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "版本号（不带 v 前缀，例如 0.1.0；CI 会自动加上 v）"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+      tag: ${{ steps.validate.outputs.tag }}
+    steps:
+      - name: 校验版本号
+        id: validate
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$VERSION" == v* || "$VERSION" == V* ]]; then
+            echo "::error::请输入不带 v 前缀的版本号，例如 0.1.0（CI 会自动添加 v 前缀）"
+            exit 1
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::版本号格式不正确，应为形如 0.1.0 的三段式数字版本号"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+  frontend:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec vp build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: console-dist
+          path: internal/console/dist
+
+  build:
+    needs: [prepare, frontend]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+          - goos: linux
+            goarch: arm64
+            runner: ubuntu-latest
+          - goos: darwin
+            goarch: amd64
+            runner: macos-14
+          - goos: darwin
+            goarch: arm64
+            runner: macos-14
+          - goos: windows
+            goarch: amd64
+            runner: windows-latest
+    runs-on: ${{ matrix.runner }}
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      CGO_ENABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: console-dist
+          path: internal/console/dist
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - name: 安装 arm64 交叉编译工具链
+        if: matrix.goos == 'linux' && matrix.goarch == 'arm64'
+        run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+      - name: 将 MinGW 加入 PATH（Windows）
+        if: matrix.goos == 'windows'
+        shell: pwsh
+        run: echo "C:\Strawberry\c\bin" >> $env:GITHUB_PATH
+      - name: 编译插件动态库
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$GOOS" in
+            darwin) EXT=dylib ;;
+            windows) EXT=dll ;;
+            *) EXT=so ;;
+          esac
+          if [ "$GOOS" = "linux" ] && [ "$GOARCH" = "arm64" ]; then
+            export CC=aarch64-linux-gnu-gcc
+          fi
+          mkdir -p out
+          go build -trimpath -buildmode=c-shared -o "out/cpa2pool.$EXT" ./cmd/plugin
+      - name: 打包 zip（Linux / macOS）
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          NAME="cpa2pool_${VERSION}_${GOOS}_${GOARCH}"
+          (cd out && zip -X -j "../$NAME.zip" ./*)
+          if command -v sha256sum >/dev/null 2>&1; then
+            sha256sum "$NAME.zip" > "$NAME.sha256"
+          else
+            shasum -a 256 "$NAME.zip" > "$NAME.sha256"
+          fi
+      - name: 打包 zip（Windows）
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $name = "cpa2pool_${env:VERSION}_${env:GOOS}_${env:GOARCH}"
+          Compress-Archive -Path "out\*" -DestinationPath "$name.zip"
+          $hash = (Get-FileHash "$name.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  $name.zip`n" | Out-File -FilePath "$name.sha256" -Encoding ascii -NoNewline
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            cpa2pool_*.zip
+            cpa2pool_*.sha256
+
+  release:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: package-*
+          path: dist
+          merge-multiple: true
+      - name: 汇总 checksums.txt
+        run: cat dist/*.sha256 > dist/checksums.txt
+      - name: 计算变更日志链接
+        id: changelog
+        run: |
+          set -euo pipefail
+          PREV_TAG=$(git tag --list 'v*' --sort=-v:refname | head -n1 || true)
+          if [ -n "$PREV_TAG" ]; then
+            echo "range=${PREV_TAG}...${{ needs.prepare.outputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            FIRST_COMMIT=$(git rev-list --max-parents=0 HEAD | tail -n1)
+            echo "range=${FIRST_COMMIT}...${{ needs.prepare.outputs.tag }}" >> "$GITHUB_OUTPUT"
+          fi
+      - name: 生成发布说明
+        id: notes
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          COMPARE_URL: https://github.com/${{ github.repository }}/compare/${{ steps.changelog.outputs.range }}
+        run: |
+          {
+            echo "notes<<EOF"
+            echo "## 拼车额度（cpa2pool）v${VERSION}"
+            echo ""
+            echo "本次发布的完整变更日志："
+            echo "${COMPARE_URL}"
+            echo ""
+            echo "### 安装方式"
+            echo "下载对应平台的压缩包与 checksums.txt，校验 sha256 后解压，将其中的动态库放入 CPA 的 \`plugins\` 目录（文件名即插件 ID），详见仓库内 \`plugin.example.yaml\`。"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - name: 创建 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          NOTES: ${{ steps.notes.outputs.notes }}
+        run: |
+          set -euo pipefail
+          gh release create "$TAG" dist/*.zip dist/checksums.txt \
+            --title "cpa2pool v${VERSION}" \
+            --notes "$NOTES"
