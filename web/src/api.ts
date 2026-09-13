@@ -108,3 +108,7 @@ export const reasons: Record<string, string> = {
 export function reason(value: string) {
   return value.startsWith('quota_exhausted:') ? '额度用尽' : reasons[value] || value;
 }
+export const FEEDBACK_LIMIT = 800;
+export async function submitFeedback(content: string) {
+  await api('feedback', 'POST', { content });
+}

@@ -4,6 +4,7 @@ import (
 	"cpa2pool/internal/api"
 	"cpa2pool/internal/billing"
 	"cpa2pool/internal/console"
+	"cpa2pool/internal/feedback"
 	"cpa2pool/internal/store"
 	"encoding/json"
 	"errors"
@@ -13,10 +14,11 @@ import (
 )
 
 type Runtime struct {
-	mu      sync.Mutex
-	db      *store.Store
-	billing *billing.Service
-	path    string
+	mu       sync.Mutex
+	db       *store.Store
+	billing  *billing.Service
+	feedback *feedback.Service
+	path     string
 }
 type execution struct {
 	RequestID      string
@@ -34,6 +36,10 @@ type execution struct {
 func (r *Runtime) Close() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.feedback != nil {
+		r.feedback.Close()
+		r.feedback = nil
+	}
 	if r.db != nil {
 		r.db.DB.Close()
 		r.db = nil
@@ -68,6 +74,7 @@ func (r *Runtime) Register(raw []byte) (any, error) {
 		r.db = db
 		r.path = cfg.Database
 		r.billing = billing.New(db)
+		r.feedback = feedback.New(db)
 	}
 	return map[string]any{"schema_version": 6, "metadata": map[string]any{"Name": "拼车额度", "Version": "0.1.0", "Author": "cpa2pool", "GitHubRepository": "local:cpa2pool", "ConfigFields": []any{}}, "capabilities": map[string]bool{"management_api": true, "request_interceptor": true, "request_lifecycle_plugin": true, "response_interceptor": true, "response_stream_interceptor": true, "websocket_response_observer": true}}, nil
 }
@@ -90,7 +97,7 @@ func (r *Runtime) Handle(method string, raw []byte) (any, error) {
 		if req.Path == "/v0/resource/plugins/cpa2pool/ui" {
 			return api.Response{StatusCode: 200, Headers: http.Header{"Content-Type": {"text/html; charset=utf-8"}}, Body: console.HTML}, nil
 		}
-		return (api.API{Store: r.db}).Handle(req), nil
+		return (api.API{Store: r.db, Feedback: r.feedback}).Handle(req), nil
 	}
 	var req execution
 	if err := json.Unmarshal(raw, &req); err != nil {

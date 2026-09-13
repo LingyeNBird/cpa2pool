@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AnimatedValue from './components/AnimatedValue.vue';
+import ReportTable from './components/ReportTable.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { PhPlus, PhPencilSimple, PhTrash } from '@phosphor-icons/vue';
 import { api, act, busy, money } from '../api';
@@ -116,154 +117,144 @@ onMounted(() => act(load));
         </button>
       </div>
       <div v-if="catalogError" class="alert">{{ catalogError }}</div>
-      <div v-if="loading" class="empty">读取中</div>
-      <div v-else-if="!prices.length" class="empty">添加模型价格后可开始计费</div>
-      <div v-else-if="activeTable === 'token'" class="table-wrap table-list table-list-inset">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>模型</th>
-              <th><FieldLabel text="输入" tip="USD / 百万 Token。" /></th>
-              <th>输出</th>
-              <th>缓存读取</th>
-              <th>缓存写入</th>
-              <th>倍率</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="p in pagedPrices" :key="p.model">
-              <td><strong>{{ p.model }}</strong></td>
-              <td class="amount"><AnimatedValue :value="money(p.input)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.output)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.cache_read)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.cache_write)" /></td>
-              <td>
-                <div class="row-actions">
-                  <span v-if="p.priority_enabled" class="badge"
-                    >FAST ×<AnimatedValue :value="p.priority_multiplier"
-                  /></span>
-                  <span v-if="p.long_enabled" class="badge">长上下文</span>
-                  <span v-if="p.model_enabled" class="badge"
-                    >模型 ×<AnimatedValue :value="p.model_multiplier"
-                  /></span>
-                  <span v-if="!p.priority_enabled && !p.long_enabled && !p.model_enabled">无</span>
-                </div>
-              </td>
-              <td>
-                <div class="row-actions">
-                  <button
-                    class="btn btn-sm"
-                    @click="
-                      editing = p;
-                      editingMode = 'token';
-                      showEditor = true;
-                    "
-                  >
-                    <PhPencilSimple :size="16" />编辑
-                  </button>
-                  <button
-                    class="btn btn-sm btn-square"
-                    :aria-label="`删除${p.model}`"
-                    @click="removing = p"
-                  >
-                    <PhTrash :size="18" />
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div
-        v-else-if="activeTable === 'image' && imagePrices.length"
-        class="table-wrap table-list table-list-inset"
+      <ReportTable
+        v-if="activeTable === 'token'"
+        :items="pagedPrices"
+        :row-key="(p) => p.model"
+        :columns="7"
+        empty="添加模型价格后可开始计费"
+        :pending="loading"
       >
-        <table class="table">
-          <thead>
-            <tr>
-              <th>模型</th>
-              <th>1K / 张</th>
-              <th>2K / 张</th>
-              <th>4K / 张</th>
-              <th>模型倍率</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="p in pagedPrices" :key="p.model">
-              <td><strong>{{ p.model }}</strong></td>
-              <td class="amount"><AnimatedValue :value="money(p.image_price_1k)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.image_price_2k)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.image_price_4k)" /></td>
-              <td>
-                <span v-if="p.model_enabled"
-                  >×<AnimatedValue :value="p.model_multiplier"
-                /></span>
-                <span v-else>无</span>
-              </td>
-              <td>
-                <button
-                  class="btn btn-sm"
-                  @click="
-                    editing = p;
-                    editingMode = 'image';
-                    showEditor = true;
-                  "
-                >
-                  <PhPencilSimple :size="16" />编辑
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div
-        v-else-if="activeTable === 'video' && videoPrices.length"
-        class="table-wrap table-list table-list-inset"
+        <template #header>
+          <th>模型</th>
+          <th><FieldLabel text="输入" tip="USD / 百万 Token。" /></th>
+          <th>输出</th>
+          <th>缓存读取</th>
+          <th>缓存写入</th>
+          <th>倍率</th>
+          <th>操作</th>
+        </template>
+        <template #row="{ item: p }">
+          <td><strong>{{ p.model }}</strong></td>
+          <td class="amount"><AnimatedValue :value="money(p.input)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.output)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.cache_read)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.cache_write)" /></td>
+          <td>
+            <div class="row-actions">
+              <span v-if="p.priority_enabled" class="badge"
+                >FAST ×<AnimatedValue :value="p.priority_multiplier"
+              /></span>
+              <span v-if="p.long_enabled" class="badge">长上下文</span>
+              <span v-if="p.model_enabled" class="badge"
+                >模型 ×<AnimatedValue :value="p.model_multiplier"
+              /></span>
+              <span v-if="!p.priority_enabled && !p.long_enabled && !p.model_enabled">无</span>
+            </div>
+          </td>
+          <td>
+            <div class="row-actions">
+              <button
+                class="btn btn-sm"
+                @click="
+                  editing = p;
+                  editingMode = 'token';
+                  showEditor = true;
+                "
+              >
+                <PhPencilSimple :size="16" />编辑
+              </button>
+              <button
+                class="btn btn-sm btn-square"
+                :aria-label="`删除${p.model}`"
+                @click="removing = p"
+              >
+                <PhTrash :size="18" />
+              </button>
+            </div>
+          </td>
+        </template>
+      </ReportTable>
+      <ReportTable
+        v-else-if="activeTable === 'image'"
+        :items="pagedPrices"
+        :row-key="(p) => p.model"
+        :columns="6"
+        empty="当前模型目录没有图片生成模型"
+        :pending="loading"
       >
-        <table class="table">
-          <thead>
-            <tr>
-              <th>模型</th>
-              <th>480p / 秒</th>
-              <th>720p / 秒</th>
-              <th>1024p / 秒</th>
-              <th>1080p / 秒</th>
-              <th>模型倍率</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="p in pagedPrices" :key="p.model">
-              <td><strong>{{ p.model }}</strong></td>
-              <td class="amount"><AnimatedValue :value="money(p.video_price_480p)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.video_price_720p)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.video_price_1024p)" /></td>
-              <td class="amount"><AnimatedValue :value="money(p.video_price_1080p)" /></td>
-              <td>
-                <span v-if="p.model_enabled">×<AnimatedValue :value="p.model_multiplier" /></span>
-                <span v-else>无</span>
-              </td>
-              <td>
-                <button
-                  class="btn btn-sm"
-                  @click="
-                    editing = p;
-                    editingMode = 'video';
-                    showEditor = true;
-                  "
-                >
-                  <PhPencilSimple :size="16" />编辑
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div v-else class="empty">
-        当前模型目录没有{{ activeTable === 'video' ? '视频' : '图片' }}生成模型
-      </div>
+        <template #header>
+          <th>模型</th>
+          <th>1K / 张</th>
+          <th>2K / 张</th>
+          <th>4K / 张</th>
+          <th>模型倍率</th>
+          <th>操作</th>
+        </template>
+        <template #row="{ item: p }">
+          <td><strong>{{ p.model }}</strong></td>
+          <td class="amount"><AnimatedValue :value="money(p.image_price_1k)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.image_price_2k)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.image_price_4k)" /></td>
+          <td>
+            <span v-if="p.model_enabled">×<AnimatedValue :value="p.model_multiplier" /></span>
+            <span v-else>无</span>
+          </td>
+          <td>
+            <button
+              class="btn btn-sm"
+              @click="
+                editing = p;
+                editingMode = 'image';
+                showEditor = true;
+              "
+            >
+              <PhPencilSimple :size="16" />编辑
+            </button>
+          </td>
+        </template>
+      </ReportTable>
+      <ReportTable
+        v-else
+        :items="pagedPrices"
+        :row-key="(p) => p.model"
+        :columns="7"
+        empty="当前模型目录没有视频生成模型"
+        :pending="loading"
+      >
+        <template #header>
+          <th>模型</th>
+          <th>480p / 秒</th>
+          <th>720p / 秒</th>
+          <th>1024p / 秒</th>
+          <th>1080p / 秒</th>
+          <th>模型倍率</th>
+          <th>操作</th>
+        </template>
+        <template #row="{ item: p }">
+          <td><strong>{{ p.model }}</strong></td>
+          <td class="amount"><AnimatedValue :value="money(p.video_price_480p)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.video_price_720p)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.video_price_1024p)" /></td>
+          <td class="amount"><AnimatedValue :value="money(p.video_price_1080p)" /></td>
+          <td>
+            <span v-if="p.model_enabled">×<AnimatedValue :value="p.model_multiplier" /></span>
+            <span v-else>无</span>
+          </td>
+          <td>
+            <button
+              class="btn btn-sm"
+              @click="
+                editing = p;
+                editingMode = 'video';
+                showEditor = true;
+              "
+            >
+              <PhPencilSimple :size="16" />编辑
+            </button>
+          </td>
+        </template>
+      </ReportTable>
       <TablePagination
         v-if="activePrices.length"
         :total="activePrices.length"

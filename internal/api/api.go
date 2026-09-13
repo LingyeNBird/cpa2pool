@@ -2,6 +2,7 @@ package api
 
 import (
 	"cpa2pool/internal/domain"
+	"cpa2pool/internal/feedback"
 	"cpa2pool/internal/participant"
 	"cpa2pool/internal/pricing"
 	"cpa2pool/internal/quota"
@@ -49,13 +50,17 @@ func Routes() []Route {
 	out = append(out, Route{"POST", Prefix + "/adjustments"})
 	out = append(out, Route{"POST", Prefix + "/participant-key-candidates"})
 	out = append(out, Route{"POST", Prefix + "/prices/sync-defaults"})
+	out = append(out, Route{"POST", Prefix + "/feedback"})
 	for _, path := range []string{"status", "bills", "stats", "periods", "audits"} {
 		out = append(out, Route{"GET", Prefix + "/" + path})
 	}
 	return out
 }
 
-type API struct{ Store *store.Store }
+type API struct {
+	Store    *store.Store
+	Feedback *feedback.Service
+}
 
 func respond(code int, v any) Response {
 	return Response{code, http.Header{"Content-Type": {"application/json; charset=utf-8"}, "Cache-Control": {"no-store"}}, []byte(store.JSON(v))}
@@ -183,6 +188,14 @@ func (a API) dispatch(r Request) (any, error) {
 			return nil, e
 		}
 		return qs.Save(v)
+	case "POST /feedback":
+		v, e := decode[struct {
+			Content string `json:"content"`
+		}](r.Body)
+		if e != nil {
+			return nil, e
+		}
+		return nil, a.Feedback.Submit(v.Content)
 	case "POST /adjustments":
 		v, e := decode[quota.Adjustment](r.Body)
 		if e != nil {

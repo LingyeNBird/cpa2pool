@@ -7,11 +7,13 @@ import PricesPage from './components/PricesPage.vue';
 import ReportsPage from './components/ReportsPage.vue';
 import PageActions from './components/PageActions.vue';
 import TooltipIcon from './components/components/TooltipIcon.vue';
+import FeedbackDialog from './components/components/FeedbackDialog.vue';
 import './App.css';
 const credential = ref('');
 const restoring = ref(true);
 const section = ref('participants');
 const revision = ref(0);
+const showFeedback = ref(false);
 const tabs = [
   { id: 'participants', title: '参与者', icon: PhUsers },
   { id: 'prices', title: '计费设置', icon: PhSlidersHorizontal },
@@ -38,7 +40,13 @@ onMounted(async () => {
         <PhChartLine :size="27" weight="bold" />
         <h1>拼车额度</h1>
       </div>
-      <PageActions v-if="authenticated" :busy="busy" @refresh="revision++" @logout="logout" />
+      <PageActions
+        v-if="authenticated"
+        :busy="busy"
+        @refresh="revision++"
+        @logout="logout"
+        @feedback="showFeedback = true"
+      />
     </header>
     <div v-if="failure" class="alert alert-error error-bar" role="alert">
       <span>{{ failure }}</span
@@ -83,5 +91,6 @@ onMounted(async () => {
       <PricesPage v-else-if="section === 'prices'" :key="`c${revision}`" />
       <ReportsPage v-else :key="`r${revision}`" />
     </template>
+    <FeedbackDialog v-if="showFeedback" @close="showFeedback = false" />
   </main>
 </template>

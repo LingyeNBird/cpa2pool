@@ -138,6 +138,10 @@ h3 {
   transform: translate(2px, 2px);
   box-shadow: none;
 }
+.btn:disabled {
+  box-shadow: none;
+  cursor: not-allowed;
+}
 .btn-ghost {
   border-color: transparent;
   box-shadow: none;

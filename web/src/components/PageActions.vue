@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { PhArrowClockwise, PhSignOut } from '@phosphor-icons/vue';
+import { PhArrowClockwise, PhSignOut, PhChatCircleText } from '@phosphor-icons/vue';
 import './PageActions.css';
 defineProps<{ busy: boolean }>();
-const emit = defineEmits<{ refresh: []; logout: [] }>();
+const emit = defineEmits<{ refresh: []; logout: []; feedback: [] }>();
 </script>
 
 <template>
@@ -16,6 +16,9 @@ const emit = defineEmits<{ refresh: []; logout: [] }>();
       @click="emit('logout')"
     >
       <PhSignOut :size="18" />退出
+    </button>
+    <button class="btn btn-sm btn-ghost" @click="emit('feedback')">
+      <PhChatCircleText :size="18" />反馈
     </button>
   </div>
 </template>
