@@ -108,8 +108,12 @@ jobs:
           if [ "$GOOS" = "linux" ] && [ "$GOARCH" = "arm64" ]; then
             export CC=aarch64-linux-gnu-gcc
           fi
+          go build -trimpath -buildmode=c-shared -o "cpa2pool.$EXT" ./cmd/plugin
+          # buildmode=c-shared also emits a companion .h header next to the
+          # library; copy only the library itself so the release zip's root
+          # holds exactly the one dynamic library the registry expects.
           mkdir -p out
-          go build -trimpath -buildmode=c-shared -o "out/cpa2pool.$EXT" ./cmd/plugin
+          cp "cpa2pool.$EXT" out/
       - name: 打包 zip（Linux / macOS）
         if: runner.os != 'Windows'
         shell: bash
